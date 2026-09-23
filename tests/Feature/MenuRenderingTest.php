@@ -530,6 +530,37 @@ describe('text style', function (): void {
         expect($link->getAttribute('style'))->toContain('letter-spacing: 1px')->toContain('--mb-item-hover-color: rgb(1 2 3)');
     });
 
+    it('draws underlines on the label, which the decoration of the link cannot reach', function (): void {
+        $css = Syriable\Filament\Plugins\MenuBuilder\Support\FrontendAssets::css();
+
+        // The label sits in an inline-flex box; a decoration set on the link is never painted on it.
+        expect($css)->toMatch('/:where\(\.mb-menu \.mb-content\) \{\s*display: inline-flex;/')
+            ->toContain('.mb-item.fi-link:is(:hover, :focus-visible) .mb-label')
+            ->toContain('.mb-underline-hover:is(:hover, :focus-visible) .mb-label')
+            ->toContain('.mb-underline-always .mb-label')
+            ->toContain('.mb-underline-none .mb-label')
+            ->and(preg_match_all('/([^{}]*)\{\s*text-decoration-line: underline;/', (string) preg_replace('#/\*.*?\*/#s', '', $css), $matches))->toBeGreaterThan(0);
+
+        foreach ($matches[1] as $selectors) {
+            foreach (preg_split('/,\s*\n/', $selectors) ?: [] as $selector) {
+                expect(trim($selector))->toEndWith('.mb-label');
+            }
+        }
+    });
+
+    it('animates the chevron of open dropdowns', function (): void {
+        $css = Syriable\Filament\Plugins\MenuBuilder\Support\FrontendAssets::css();
+
+        expect($css)->toContain('.mb-dropdown[data-level="1"] > .fi-dropdown-trigger [aria-expanded="true"] .mb-chevron')
+            ->toContain('rotate: 180deg')
+            ->toContain('prefers-reduced-motion');
+
+        $xpath = renderMenu([resolved('Services', ['children' => [resolved('Web', ['depth' => 2, 'children' => [resolved('Laravel', ['depth' => 3])]])]])]);
+
+        expect($xpath->query('//div[@data-level="1"]/div[contains(@class, "fi-dropdown-trigger")]//*[contains(@class, "mb-chevron")]')->length)->toBe(1)
+            ->and($xpath->query('//div[@data-level="2"]/div[contains(@class, "fi-dropdown-trigger")]//*[contains(@class, "mb-chevron")]')->length)->toBe(1);
+    });
+
     it('ships a rule for every text option', function (): void {
         $css = Syriable\Filament\Plugins\MenuBuilder\Support\FrontendAssets::css();
         $classes = [

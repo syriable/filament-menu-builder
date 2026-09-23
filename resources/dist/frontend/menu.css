@@ -197,12 +197,6 @@
         text-decoration: underline;
     }
 
-    /* Headings are not links: no underline on hover unless chosen. */
-
-    .mb-menu .mb-item-heading.fi-link.fi-link:is(:hover, :focus-visible) {
-        text-decoration-line: none;
-    }
-
     /* Per-item text options. */
 
     .mb-menu .mb-item.mb-weight-thin { font-weight: 100; }
@@ -230,17 +224,59 @@
     .mb-menu .mb-item.mb-cursor-pointer { cursor: pointer; }
     .mb-menu .mb-item.mb-cursor-default { cursor: default; }
 
-    .mb-menu .mb-item.mb-underline-always,
-    .mb-menu .mb-item.mb-underline-always .fi-dropdown-list-item-label,
-    .mb-menu .mb-item.mb-underline-hover.mb-underline-hover:is(:hover, :focus-visible),
-    .mb-menu .mb-item.mb-underline-hover:is(:hover, :focus-visible) .fi-dropdown-list-item-label {
+    /*
+     * Underlines are drawn on the label: it sits in an inline-flex box
+     * (.mb-content), and text decorations of the link never reach into such
+     * a box.
+     */
+
+    .mb-menu .mb-item.fi-link:is(:hover, :focus-visible) .mb-label,
+    .mb-menu .mb-panel .mb-item:not(.mb-item-heading, .fi-btn):is(:hover, :focus-visible) .mb-label {
         text-decoration-line: underline;
     }
 
-    .mb-menu .mb-item.mb-underline-none.mb-underline-none,
-    .mb-menu .mb-item.mb-underline-none.mb-underline-none:is(:hover, :focus-visible),
-    .mb-menu .mb-panel .mb-item.mb-underline-none:is(:hover, :focus-visible) .fi-dropdown-list-item-label {
+    /* Headings are not links: no underline on hover unless chosen. */
+
+    .mb-menu .mb-item-heading.fi-link:is(:hover, :focus-visible) .mb-label {
         text-decoration-line: none;
+    }
+
+    .mb-menu .mb-item.mb-underline-always.mb-underline-always.mb-underline-always .mb-label,
+    .mb-menu .mb-item.mb-underline-hover.mb-underline-hover:is(:hover, :focus-visible) .mb-label {
+        text-decoration-line: underline;
+    }
+
+    .mb-menu .mb-item.mb-underline-none .mb-label.mb-label.mb-label {
+        text-decoration-line: none;
+    }
+
+    /*
+     * Dropdown chevrons follow the open state that Filament keeps in the
+     * trigger's aria-expanded: the first level turns up, nested levels nudge
+     * towards their panel.
+     */
+
+    .mb-menu .mb-chevron {
+        transition: rotate 200ms ease, translate 200ms ease;
+    }
+
+    .mb-menu .mb-dropdown[data-level="1"] > .fi-dropdown-trigger [aria-expanded="true"] .mb-chevron {
+        rotate: 180deg;
+    }
+
+    .mb-menu .mb-dropdown:not([data-level="1"]) > .fi-dropdown-trigger [aria-expanded="true"] .mb-chevron {
+        translate: 0.1875rem 0;
+    }
+
+    .mb-menu .mb-dropdown:not([data-level="1"]) > .fi-dropdown-trigger [aria-expanded="true"] .mb-chevron:dir(rtl) {
+        translate: -0.1875rem 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .mb-menu .mb-chevron,
+        .mb-menu .mb-toggle {
+            transition: none;
+        }
     }
 
     .mb-menu .mb-item.mb-hover-color.mb-hover-color:is(:hover, :focus-visible),
