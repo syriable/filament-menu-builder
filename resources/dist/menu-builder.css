@@ -1,0 +1,248 @@
+/*
+ * Menu builder styles. Written against Filament's CSS variables so the
+ * plugin works without the host rebuilding its Tailwind theme.
+ */
+
+.mb-placements {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.mb-placement-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    background: white;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    outline: 1px solid color-mix(in oklab, var(--gray-950) 5%, transparent);
+    transition: outline-color 150ms;
+}
+
+.mb-placement-card:hover,
+.mb-placement-card:focus-visible {
+    outline-color: var(--primary-500);
+}
+
+.mb-placement-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mb-placement-card-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--gray-400);
+}
+
+.mb-placement-card-title {
+    font-weight: 600;
+    color: var(--gray-950);
+}
+
+.mb-placement-card-description,
+.mb-muted {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.mb-placement-card-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: auto;
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.mb-placement-card-link {
+    font-weight: 600;
+    color: var(--primary-600);
+}
+
+.mb-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.mb-status,
+.mb-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mb-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2rem 1rem;
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.mb-empty-icon {
+    width: 2rem;
+    height: 2rem;
+    color: var(--gray-400);
+}
+
+.mb-tree,
+.mb-children {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mb-children {
+    margin-inline-start: 1.25rem;
+    padding-inline-start: 0.75rem;
+    border-inline-start: 1px dashed var(--gray-200);
+}
+
+.mb-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.mb-row:hover {
+    background: var(--gray-50);
+}
+
+.mb-handle {
+    cursor: grab;
+    color: var(--gray-400);
+    touch-action: none;
+}
+
+.mb-handle:active {
+    cursor: grabbing;
+}
+
+.mb-toggle,
+.mb-toggle-spacer {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 1rem;
+    color: var(--gray-400);
+}
+
+.mb-toggle svg {
+    transition: transform 150ms;
+}
+
+.mb-icon-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.mb-node-icon {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--gray-500);
+}
+
+.mb-label {
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-950);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.mb-label-inactive {
+    color: var(--gray-400);
+    text-decoration: line-through;
+}
+
+.mb-type {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.mb-actions {
+    display: flex;
+    gap: 0.125rem;
+    margin-inline-start: auto;
+    opacity: 0;
+    transition: opacity 150ms;
+}
+
+.mb-row:hover .mb-actions,
+.mb-row:focus-within .mb-actions {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .mb-actions {
+        opacity: 1;
+    }
+}
+
+.mb-dragging > .mb-row {
+    opacity: 0.4;
+}
+
+.mb-drop-inside {
+    background: color-mix(in oklab, var(--primary-500) 12%, transparent);
+    outline: 2px dashed var(--primary-500);
+}
+
+.mb-drop-before::before,
+.mb-drop-after::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    height: 2px;
+    background: var(--primary-500);
+    pointer-events: none;
+}
+
+.mb-drop-before::before {
+    top: -1px;
+}
+
+.mb-drop-after::after {
+    bottom: -1px;
+}
+
+:is(.dark) .mb-placement-card {
+    background: var(--gray-900);
+    outline-color: color-mix(in oklab, white 10%, transparent);
+}
+
+:is(.dark) .mb-placement-card-title,
+:is(.dark) .mb-label {
+    color: white;
+}
+
+:is(.dark) .mb-placement-card-link {
+    color: var(--primary-400);
+}
+
+:is(.dark) .mb-row:hover {
+    background: color-mix(in oklab, white 5%, transparent);
+}
+
+:is(.dark) .mb-children {
+    border-color: color-mix(in oklab, white 10%, transparent);
+}
+
+:is(.dark) .mb-label-inactive {
+    color: var(--gray-500);
+}
