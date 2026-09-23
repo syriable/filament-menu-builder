@@ -63,8 +63,14 @@
                 </div>
             @else
                 <ul class="mb-tree" role="tree" aria-label="{{ $this->getTitle() }}">
-                    @include('menu-builder::components.tree-items', ['keys' => $tree->roots(), 'depth' => 1])
+                    @include('menu-builder::filament.tree-items', ['keys' => $tree->roots(), 'depth' => 1])
                 </ul>
+
+                @if ($view['can']['reorder'])
+                    <div class="mb-root-drop" data-root-drop>
+                        {{ __('menu-builder::menu-builder.tree.drop_root') }}
+                    </div>
+                @endif
             @endif
         </x-filament::section>
     </div>

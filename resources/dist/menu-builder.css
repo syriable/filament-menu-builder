@@ -207,7 +207,8 @@
 .mb-drop-after::after {
     content: '';
     position: absolute;
-    inset-inline: 0;
+    inset-inline-start: var(--mb-drop-indent, 0);
+    inset-inline-end: 0;
     height: 2px;
     background: var(--primary-500);
     pointer-events: none;
@@ -219,6 +220,35 @@
 
 .mb-drop-after::after {
     bottom: -1px;
+}
+
+.mb-root-drop {
+    display: none;
+    position: relative;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    border: 2px dashed var(--gray-200);
+    border-radius: 0.5rem;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.mb-is-dragging .mb-root-drop {
+    display: block;
+}
+
+.mb-root-drop.mb-drop-after {
+    border-color: var(--primary-500);
+    color: var(--primary-600);
+}
+
+.mb-root-drop.mb-drop-after::after {
+    display: none;
+}
+
+:is(.dark) .mb-root-drop {
+    border-color: color-mix(in oklab, white 15%, transparent);
 }
 
 :is(.dark) .mb-placement-card {

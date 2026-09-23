@@ -13,10 +13,12 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Override;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\MenuItemType;
 use Syriable\Filament\Plugins\MenuBuilder\MenuRegistry;
 use Syriable\Filament\Plugins\MenuBuilder\Rules\ResolvableRoute;
 use Syriable\Filament\Plugins\MenuBuilder\Support\UrlResolver;
+use Syriable\Filament\Plugins\MenuBuilder\Tree\MenuNode;
 
 /**
  * A link to a URL or to a named Laravel route with parameters.
@@ -40,13 +42,19 @@ class LinkType extends MenuItemType
     #[Override]
     protected function setUp(): void
     {
+        // A link rendered as a button or heading does not need a target.
+        $withoutLink = [
+            'exclude_if:'.MenuNode::DATA_RENDER_AS.','.RenderAs::Button->value,
+            'exclude_if:'.MenuNode::DATA_RENDER_AS.','.RenderAs::Heading->value,
+        ];
+
         $this
             ->icon('heroicon-o-link')
             ->schema(fn (): array => $this->linkSchema())
             ->rules([
-                'link_type' => ['required', 'in:'.UrlResolver::TYPE_URL.','.UrlResolver::TYPE_ROUTE],
-                'url' => ['exclude_unless:link_type,'.UrlResolver::TYPE_URL, 'required', 'string', 'max:2048'],
-                'route' => ['exclude_unless:link_type,'.UrlResolver::TYPE_ROUTE, 'required', 'string', new ResolvableRoute],
+                'link_type' => [...$withoutLink, 'required', 'in:'.UrlResolver::TYPE_URL.','.UrlResolver::TYPE_ROUTE],
+                'url' => [...$withoutLink, 'exclude_unless:link_type,'.UrlResolver::TYPE_URL, 'required', 'string', 'max:2048'],
+                'route' => [...$withoutLink, 'exclude_unless:link_type,'.UrlResolver::TYPE_ROUTE, 'required', 'string', new ResolvableRoute],
                 'route_parameters' => ['nullable', 'array'],
                 'route_parameters.*' => ['nullable', $this->scalarRule()],
                 'new_tab' => ['nullable', 'boolean'],
@@ -59,10 +67,13 @@ class LinkType extends MenuItemType
      */
     protected function linkSchema(): array
     {
-        $isRoute = static fn (Get $get): bool => $get('link_type') === UrlResolver::TYPE_ROUTE;
+        $isLink = static fn (Get $get): bool => ! in_array($get(MenuNode::DATA_RENDER_AS), [RenderAs::Button->value, RenderAs::Heading->value], true);
+        $isUrl = static fn (Get $get): bool => $isLink($get) && $get('link_type') !== UrlResolver::TYPE_ROUTE;
+        $isRoute = static fn (Get $get): bool => $isLink($get) && $get('link_type') === UrlResolver::TYPE_ROUTE;
 
         return [
             ToggleButtons::make('link_type')
+                ->visible($isLink)
                 ->label(__('menu-builder::menu-builder.fields.link_type'))
                 ->options([
                     UrlResolver::TYPE_URL => __('menu-builder::menu-builder.link_types.url'),
@@ -78,7 +89,7 @@ class LinkType extends MenuItemType
                 ->placeholder('/about, https://example.com, #pricing, mailto:…')
                 ->required()
                 ->maxLength(2048)
-                ->hidden($isRoute),
+                ->visible($isUrl),
             Select::make('route')
                 ->label(__('menu-builder::menu-builder.fields.route'))
                 ->options(static fn (): array => app(UrlResolver::class)->selectableRoutes(
@@ -99,7 +110,8 @@ class LinkType extends MenuItemType
                 ->valueLabel(__('menu-builder::menu-builder.fields.value'))
                 ->visible($isRoute),
             Toggle::make('new_tab')
-                ->label(__('menu-builder::menu-builder.fields.new_tab')),
+                ->label(__('menu-builder::menu-builder.fields.new_tab'))
+                ->visible($isLink),
         ];
     }
 

@@ -10,6 +10,7 @@ use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Syriable\Filament\Plugins\MenuBuilder\Data\ResolvedMenuItem;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Support\MenuRepository;
 use Syriable\Filament\Plugins\MenuBuilder\Support\VisibilityResolver;
 use Syriable\Filament\Plugins\MenuBuilder\Tree\MenuTree;
@@ -130,8 +131,10 @@ final readonly class MenuBuilder
             }
 
             $url = $type->resolveUrl($node, $record);
+            $renderAs = $node->renderAs() ?? ($type->hasUrl() ? RenderAs::Link : RenderAs::Heading);
 
-            if ($type->hasUrl() && $url === null) {
+            // A link without a URL (missing route, deleted record, ...) is left out.
+            if ($renderAs === RenderAs::Link && $url === null) {
                 continue;
             }
 
@@ -153,6 +156,10 @@ final readonly class MenuBuilder
                 isActiveTrail: array_any($children, static fn (ResolvedMenuItem $child): bool => $child->isActive()),
                 data: $node->data,
                 children: $children,
+                renderAs: $renderAs,
+                attributes: $node->htmlAttributes(),
+                attributeTarget: $node->attributeTarget(),
+                badgePosition: $node->badgePosition(),
             );
         }
 

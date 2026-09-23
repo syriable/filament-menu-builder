@@ -142,6 +142,7 @@ export default function menuBuilderTree({ storageKey, canReorder, unsavedMessage
             }
 
             this.draggingKey = this.keyOf(row)
+            this.$root.classList.add('mb-is-dragging')
             event.dataTransfer.effectAllowed = 'move'
             event.dataTransfer.setData('text/plain', this.draggingKey)
             row.closest('.mb-node').classList.add('mb-dragging')
@@ -153,28 +154,28 @@ export default function menuBuilderTree({ storageKey, canReorder, unsavedMessage
             row?.removeAttribute('draggable')
             row?.closest('.mb-node')?.classList.remove('mb-dragging')
             this.clearDropTarget()
+            this.$root.classList.remove('mb-is-dragging')
             this.draggingKey = null
         },
 
         onDragOver(event) {
-            const row = this.dropRow(event)
+            const target = this.dropTargetFor(event)
 
-            if (!row) {
+            if (!target) {
                 return
             }
 
             event.preventDefault()
             event.dataTransfer.dropEffect = 'move'
 
-            const position = this.positionFor(event, row)
-
-            if (this.dropTarget?.row === row && this.dropTarget.position === position) {
+            if (this.dropTarget?.row === target.row && this.dropTarget.position === target.position && this.dropTarget.key === target.key) {
                 return
             }
 
             this.clearDropTarget()
-            this.dropTarget = { row, position }
-            row.classList.add(`mb-drop-${position}`)
+            this.dropTarget = target
+            target.row.classList.add(`mb-drop-${target.position}`)
+            target.row.style.setProperty('--mb-drop-indent', `${target.indent}px`)
         },
 
         // dragleave also fires when moving over child elements (often with a
@@ -195,28 +196,97 @@ export default function menuBuilderTree({ storageKey, canReorder, unsavedMessage
         },
 
         onDrop(event) {
-            const row = this.dropRow(event)
+            // The drop event itself decides the target, so a stale
+            // highlight can never send the wrong operation.
+            const target = this.dropTargetFor(event)
             const draggingKey = this.draggingKey
 
             this.clearDropTarget()
 
-            if (!row) {
+            if (!target) {
                 return
             }
 
             event.preventDefault()
 
-            // The drop event itself decides the position, so a stale
-            // highlight can never send the wrong operation.
-            const key = this.keyOf(row)
-            const position = this.positionFor(event, row)
+            if (target.key === draggingKey) {
+                return
+            }
 
-            if (position === 'inside') {
-                delete this.collapsed[key]
+            if (target.position === 'inside') {
+                delete this.collapsed[target.key]
                 this.persist()
             }
 
-            this.$wire.moveItem(draggingKey, key, position)
+            this.$wire.moveItem(draggingKey, target.key, target.position)
+        },
+
+        // Resolves what a drop at the pointer would do: { row, key, position, indent }.
+        //
+        // - The root drop zone moves the item to the end of the top level.
+        // - "after" the last child of a parent, moving the pointer into the
+        //   indentation gutter (towards the inline start) moves the item out to
+        //   the ancestor's level, so a child can always become a root item.
+        dropTargetFor(event) {
+            if (!this.draggingKey) {
+                return null
+            }
+
+            const zone = event.target.closest?.('[data-root-drop]')
+
+            if (zone && this.$root.contains(zone)) {
+                const roots = [...this.$root.querySelectorAll('.mb-tree > .mb-node')].filter((node) => node.dataset.key !== this.draggingKey)
+                const last = roots.at(-1)
+
+                return last ? { row: zone, key: last.dataset.key, position: 'after', indent: 0 } : null
+            }
+
+            const row = this.dropRow(event)
+
+            if (!row) {
+                return null
+            }
+
+            const position = this.positionFor(event, row)
+
+            if (position !== 'after') {
+                return { row, key: this.keyOf(row), position, indent: 0 }
+            }
+
+            const rtl = getComputedStyle(this.$root).direction === 'rtl'
+            const edgeOf = (node) => {
+                const rect = node.querySelector(':scope > .mb-row').getBoundingClientRect()
+
+                return rtl ? rect.right : rect.left
+            }
+            const isBeforeEdge = (edge) => (rtl ? event.clientX > edge : event.clientX < edge)
+
+            let node = row.closest('.mb-node')
+
+            while (this.isLastSibling(node)) {
+                const parent = node.parentElement.closest('.mb-node')
+
+                if (!parent || !this.$root.contains(parent) || !isBeforeEdge(edgeOf(node))) {
+                    break
+                }
+
+                node = parent
+            }
+
+            const indent = (edgeOf(node) - edgeOf(row.closest('.mb-node'))) * (rtl ? -1 : 1)
+
+            return { row, key: node.dataset.key, position: 'after', indent }
+        },
+
+        // Whether a node is the last of its siblings, ignoring the dragged item.
+        isLastSibling(node) {
+            for (let next = node.nextElementSibling; next; next = next.nextElementSibling) {
+                if (next.dataset.key !== this.draggingKey) {
+                    return false
+                }
+            }
+
+            return true
         },
 
         // The row under the pointer, if the dragged item may be dropped on it.
@@ -227,7 +297,9 @@ export default function menuBuilderTree({ storageKey, canReorder, unsavedMessage
                 return null
             }
 
-            const row = event.target.closest?.('.mb-row')
+            // Over the indentation gutter the pointer is not above a row, so
+            // fall back to the row at the pointer's vertical position.
+            const row = event.target.closest?.('.mb-row') ?? this.rowAt(event)
 
             if (!row || !this.$root.contains(row)) {
                 return null
@@ -236,6 +308,18 @@ export default function menuBuilderTree({ storageKey, canReorder, unsavedMessage
             const dragged = this.$root.querySelector(`.mb-node[data-key="${CSS.escape(this.draggingKey)}"]`)
 
             return dragged?.contains(row) ? null : row
+        },
+
+        rowAt(event) {
+            if (!event.target.closest?.('.mb-tree')) {
+                return null
+            }
+
+            return [...this.$root.querySelectorAll('.mb-tree .mb-row')].find((row) => {
+                const rect = row.getBoundingClientRect()
+
+                return rect.height > 0 && event.clientY >= rect.top && event.clientY <= rect.bottom
+            }) ?? null
         },
 
         // Top quarter: before, bottom quarter: after, middle: inside.
@@ -260,6 +344,7 @@ export default function menuBuilderTree({ storageKey, canReorder, unsavedMessage
 
         clearDropTarget() {
             this.dropTarget?.row.classList.remove('mb-drop-before', 'mb-drop-after', 'mb-drop-inside')
+            this.dropTarget?.row.style.removeProperty('--mb-drop-indent')
             this.dropTarget = null
         },
     }

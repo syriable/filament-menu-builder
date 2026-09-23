@@ -52,6 +52,10 @@
                 <x-filament::badge size="sm" :color="$node->badgeColor ?? 'gray'">{{ $node->badge }}</x-filament::badge>
             @endif
 
+            @if ($node->renderAs() === \Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs::Button)
+                <x-filament::badge size="sm" color="primary" icon="heroicon-m-cursor-arrow-rays">{{ __('menu-builder::menu-builder.render_as.button') }}</x-filament::badge>
+            @endif
+
             @if ($node->isNew())
                 <x-filament::badge size="sm" color="info">{{ __('menu-builder::menu-builder.tree.new') }}</x-filament::badge>
             @endif
@@ -102,7 +106,7 @@
 
         @if ($children !== [])
             <ul class="mb-children" role="group">
-                @include('menu-builder::components.tree-items', ['keys' => $children, 'depth' => $depth + 1])
+                @include('menu-builder::filament.tree-items', ['keys' => $children, 'depth' => $depth + 1])
             </ul>
         @endif
     </li>

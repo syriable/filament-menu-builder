@@ -176,6 +176,8 @@ MenuItemType::make('divider')
 
 Resolver closures can ask for `$item` (the `MenuNode`), `$data` (the item's data array) and `$record` (the linked model; see below).
 
+The `data` keys `render_as`, `attributes`, `attribute_target` and `badge_position` are shared by all item types (see [Rendering](#rendering-link-button-heading)). Don't use them for custom fields.
+
 ## Model-backed items
 
 Link items to any Eloquent model, such as categories, pages or documentation sections, without the package knowing that model:
@@ -235,38 +237,192 @@ $items = Menu::build('header', currentUrl: $url);
 | `isCurrent` | the item's URL is the current page (query string ignored) |
 | `isActiveTrail` | a descendant is the current page |
 | `isActive()` | `isCurrent || isActiveTrail` |
-| `children`, `hasChildren()` | nested `ResolvedMenuItem`s |
+| `children`, `hasChildren()`, `isDropdown()` | nested `ResolvedMenuItem`s; items with children are dropdowns |
+| `renderAs`, `isLink()`, `isButton()`, `isHeading()` | the item's root element (see [Rendering](#rendering-link-button-heading)) |
+| `attributes`, `attributeTarget` | validated custom HTML attributes and where they go |
+| `itemAttributes()`, `wrapperAttributes()` | escaped `ComponentAttributeBag`s for the item element and its `<li>` |
+| `badgePosition`, `hasBadge()` | `start`, `end` or `top` |
 | `data` | the raw type data, for custom rendering |
 | `toArray()` / JSON | for APIs and JavaScript frontends |
 
-A minimal Blade component:
+## Rendering menus with Blade components
+
+The package ships a small set of anonymous Blade components. Pass them the result of `Menu::build()` and they handle the whole tree: hierarchy, dropdowns, links, buttons, headings, attributes, icons, badges and the active state. You never loop over the tree yourself.
 
 ```blade
-{{-- resources/views/components/menu.blade.php --}}
+<x-menu-builder::menu :items="Menu::build('header')" label="Main navigation" />
+```
+
+| Prop | Default | |
+| --- | --- | --- |
+| `items` | `[]` | the collection returned by `Menu::build()` |
+| `variant` | `dropdown` | `dropdown`: horizontal, with dropdowns on wide screens and an accordion on small screens<br>`tree`: vertical accordion; the active trail starts open<br>`columns`: root items as columns with their children listed below them |
+| `item-component` | `menu-builder::item` | component that renders one item's element |
+| `heading-tag` | `span` | element used for headings |
+| `label` | – | `aria-label` of the `<nav>` |
+| `with-assets` | config | print the structural CSS and dropdown script (once per page) |
+
+Thin wrappers exist for common placements. Each one is `menu` with a variant and a class:
+
+```blade
+<x-menu-builder::header :items="Menu::build('header')" />   {{-- dropdown --}}
+<x-menu-builder::sidebar :items="Menu::build('sidebar')" /> {{-- tree --}}
+<x-menu-builder::footer :items="Menu::build('footer')" />   {{-- columns --}}
+```
+
+### Structure
+
+```html
+<nav class="mb-menu mb-menu--dropdown" data-mb-menu="dropdown">
+  <ul class="mb-list mb-root" data-level="1">
+    <li class="mb-entry mb-has-children">          <!-- wrapper -->
+      <div class="mb-row">
+        <a class="mb-item mb-item-link" href="/services">…</a>   <!-- item root -->
+        <button class="mb-toggle" data-mb-toggle aria-expanded="false" aria-controls="…">…</button>
+      </div>
+      <ul class="mb-list mb-submenu" data-level="2">…</ul>
+    </li>
+  </ul>
+</nav>
+```
+
+### Dropdowns and nested menus
+
+An item with children is automatically a dropdown, and a child with children is a nested dropdown, at any depth. There is no separate "dropdown" item type.
+
+- **Wide screens (≥ 48rem):** submenus open on hover, on keyboard focus, or with the toggle button. The first level opens below its parent and deeper levels open to the side. If a submenu would leave the viewport it flips to the other side.
+- **Small screens:** the same markup becomes an accordion. Tapping a toggle expands or collapses that item's children in place.
+- `Escape` closes the open submenu, and clicking outside closes open dropdowns.
+
+The behavior comes from a dependency-free script of about 100 lines, printed once per page. It needs no Alpine and no build step. Set `menu-builder.frontend.assets` to `false` (or pass `:with-assets="false"`) to ship your own CSS and JS instead. The inline tags use Laravel's Vite CSP nonce when one is set.
+
+### RTL and LTR
+
+The stylesheet only uses logical properties (`inset-inline-start`, `padding-inline-start`, …), so a menu inside `dir="rtl"` mirrors itself:
+
+- Nested submenus open towards the *inline end*: right in LTR, left in RTL.
+- The flip check uses the element's computed direction and flips towards the *inline start*.
+- Badge `start` and `end` follow the reading direction.
+
+Nothing in your data is direction-specific.
+
+### Styling
+
+All package selectors are wrapped in `:where()`, so they have zero specificity and a single class in your theme overrides them. Common values are custom properties:
+
+```css
+.site-header .mb-menu {
+    --mb-submenu-background: #111827;
+    --mb-submenu-min-width: 14rem;
+    --mb-badge-background: #fde68a;
+}
+```
+
+### Placement-specific components
+
+Build your own wrappers and keep the package responsible for the tree. For example, `resources/views/components/app-footer-menu.blade.php`:
+
+```blade
 @props(['items'])
 
-<ul>
-    @foreach ($items as $item)
-        <li @class(['active' => $item->isActive()])>
-            @if ($item->url)
-                <a href="{{ $item->url }}" @if ($item->openInNewTab) target="_blank" rel="noopener" @endif>
-                    {{ $item->label }}
-                </a>
-            @else
-                <span>{{ $item->label }}</span>
-            @endif
-
-            @if ($item->hasChildren())
-                <x-menu :items="$item->children" />
-            @endif
-        </li>
-    @endforeach
-</ul>
+<x-menu-builder::menu :items="$items" variant="columns" class="grid-cols-4 gap-8 text-sm" />
 ```
 
 ```blade
-<x-menu :items="Menu::build('header')" />
+<x-app-footer-menu :items="Menu::build('footer')" />
 ```
+
+### Custom item markup
+
+There are two ways to change how a single item renders:
+
+1. **Publish and edit the package views.** Laravel then uses your copy of `components/item.blade.php`:
+
+   ```bash
+   php artisan vendor:publish --tag="menu-builder-views"
+   # resources/views/vendor/menu-builder/components/item.blade.php
+   ```
+
+2. **Pass your own component** for one menu only. It receives `item`, `level` and `heading-tag`, and the package still renders the wrappers, dropdowns and toggles around it:
+
+   ```blade
+   <x-menu-builder::menu :items="$items" item-component="nav-item" />
+   ```
+
+   ```blade
+   {{-- resources/views/components/nav-item.blade.php --}}
+   @props(['item', 'level' => 1, 'headingTag' => 'span'])
+
+   <a {{ $item->itemAttributes()->class('nav-link')->merge(['href' => $item->url]) }}>{{ $item->label }}</a>
+   ```
+
+Use `$item->itemAttributes()` in custom components. It returns an escaped attribute bag, so administrator-entered values are always safe to print.
+
+## Rendering: link, button, heading
+
+Every item has one root element, chosen with **Render as** in the item form:
+
+| Render as | Element | |
+| --- | --- | --- |
+| Automatic (default) | `<a>` for types with a URL, otherwise the heading tag | existing menus keep rendering as before |
+| Link | `<a href="…">` | only for types with a URL |
+| Button | `<button type="button">` | needs **no URL** |
+| Heading | `<span>` (see `heading-tag`) | plain text |
+
+A button does nothing by itself. Your application decides what it does through its attributes, for example opening a modal, drawer, dropdown or search, or triggering Alpine or Livewire:
+
+```text
+Render as:  Button
+Attributes: data-modal = login
+            x-on:click = $dispatch('open-modal', { id: 'login' })
+            aria-label = Open login
+```
+
+```html
+<button type="button" class="mb-item mb-item-button" data-modal="login" x-on:click="$dispatch('open-modal', { id: 'login' })" aria-label="Open login">Login</button>
+```
+
+## HTML attributes
+
+Every item can carry any HTML attributes, edited as key/value pairs in the item form. There is no allow-list:
+
+```text
+class      = btn btn-primary
+id         = open-login
+data-modal = login
+aria-label = Open login
+x-on:click = open = true
+wire:click = openLogin
+```
+
+- **Storage:** attributes live in the existing `data` JSON column under `data.attributes`, so adding a new attribute never needs a migration.
+- **Target:** **Apply attributes to** chooses the item element (`<a>`, `<button>` or heading; the default) or its wrapper (`<li>`). Children never inherit them.
+- **Merging:** `class` is appended to the package classes. Any other attribute overrides the default, for example `type="submit"` or `rel`.
+- **Empty values** render as bare attributes (`data-flag`). The HTML boolean attributes (`disabled`, `hidden`, `required`, `open`, …) are left out when the value is `false`, `0`, `off` or `no`. Other attributes keep their text, so `aria-expanded="false"` stays as it is.
+- **Safety:** attribute names are validated on every write path. Anything that could break out of the attribute syntax (whitespace, quotes, `<`, `>`, `/` or `=`) is rejected, and the renderer drops such names again as a second line of defense. Values are always HTML-escaped.
+
+Attributes are a trusted-administrator feature. They let editors attach frontend behavior (`x-on:*`, `wire:*`) to menu items, so give edit access only to people you would trust with that.
+
+## Badges
+
+A badge (text plus an optional color) can sit in three logical positions, chosen with **Badge position**:
+
+| Position | Placement |
+| --- | --- |
+| `start` | before the label: left in LTR, right in RTL |
+| `end` (default) | after the label: right in LTR, left in RTL |
+| `top` | raised above the end edge of the label, so it stays attached to the text whatever its length or direction |
+
+## Editing the tree
+
+Drag an item by its handle and drop it on another row:
+
+- the **top or bottom quarter** of a row places it before or after that row,
+- the **middle** places it inside that row, as its last child,
+- **dropping below the last child of a parent with the pointer in the indentation gutter** (to the left in LTR, to the right in RTL) moves the item out to the parent's level. Move further into the gutter to go up several levels. The drop line shows the target level.
+- the **"Drop here to move to the top level"** zone under the tree moves any item, however deeply nested, to the end of the root level.
+
+Each drop is one validated server call. Moves that break the placement rules are rejected with a message, and nothing is published until you save.
 
 ## Drafts and saving
 
@@ -369,7 +525,7 @@ The package uses a single `menu_items` table, stored as an adjacency list:
 | `id`, `parent_id` | `parent_id` references `menu_items.id` with `ON DELETE RESTRICT`: subtrees are only deleted explicitly by the package |
 | `placement`, `type` | placement and item type keys |
 | `label` | nullable (model-backed items can derive it) |
-| `data` | JSON with type-specific data (link target, record id, custom fields) |
+| `data` | JSON with type-specific data (link target, record id, custom fields) and the shared rendering options `render_as`, `attributes`, `attribute_target` and `badge_position` |
 | `icon`, `color`, `badge`, `badge_color` | presentation |
 | `visibility`, `is_active` | visibility rule key and on/off switch |
 | `sort_order`, timestamps | position among siblings |

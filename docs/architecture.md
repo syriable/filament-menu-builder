@@ -13,8 +13,10 @@ This document explains how the package is built and why. Read it before changing
 ```
 config/menu-builder.php              model, placements, cache, drafts, route picker
 database/migrations/…stub            menu_items table
-resources/dist/                      Alpine component (drag & drop) + stylesheet
-resources/views/                     Filament pages and the recursive tree partial
+resources/dist/                      editor: Alpine component (drag & drop) + stylesheet
+resources/dist/frontend/             frontend: structural menu.css + dependency-free menu.js
+resources/views/components/          frontend Blade components: menu, items, item, badge, header, footer, sidebar
+resources/views/filament/            Filament pages and the recursive editor tree partial
 resources/lang/en/                   translations
 src/
 ├── MenuBuilderServiceProvider.php   bindings, assets, install command
@@ -37,9 +39,11 @@ src/
 ├── Actions/                         PublishMenuTree + Create/Update/Move/Reorder/Delete
 ├── Drafts/                          MenuDraft, MenuDraftManager, CacheDraftStore
 ├── Contracts/DraftStore.php
-├── Support/                         MenuRepository (+ cache), UrlResolver, VisibilityResolver, MenuAuthorizer
+├── Support/                         MenuRepository (+ cache), UrlResolver, VisibilityResolver, MenuAuthorizer,
+│                                    HtmlAttributes (validate/normalize/escape), FrontendAssets
 ├── Rules/ResolvableRoute.php
-├── Data/ResolvedMenuItem.php        frontend DTO
+├── Data/ResolvedMenuItem.php        frontend DTO (the rendering contract)
+├── Enums/                           RenderAs, AttributeTarget, BadgePosition
 ├── Events/MenuPublished.php
 ├── Exceptions/
 ├── Filament/Pages/                  MenuPlacements (landing), ManageMenu (editor)
@@ -58,7 +62,11 @@ src/
  seeders / code ─► Actions ───────────┴─► PublishMenuTree ─► DB transaction ─► cache forget ─► MenuPublished
                                                                     │
  frontend ─► Menu::build() ─► MenuRepository::published (cache) ─► MenuBuilder ─► ResolvedMenuItem[]
+                                                                                        │
+                                          <x-menu-builder::menu> ─► items (recursive) ─► item (a | button | heading) ─► HTML
 ```
+
+The renderer never touches the database, and the builder never produces HTML.
 
 ## Tree engine
 
@@ -120,6 +128,8 @@ Persistent drafts or revisions only need a different `DraftStore` binding. The e
 
 - A row becomes `draggable` only while its handle is pressed, so text selection and buttons keep working normally.
 - On `dragover`, the pointer position decides the drop position: the top quarter of a row means *before*, the bottom quarter means *after*, and the middle means *inside*. An outline or line shows it. Dropping onto the dragged item or its own subtree is not offered.
+- **Moving out of a parent.** When dropping *after* the last child of a parent (ignoring the dragged item), a pointer in the indentation gutter (inline start of the row, so RTL works too) walks up to the ancestor at that level and targets `after(ancestor)`. The drop line extends to the target level through a `--mb-drop-indent` custom property. In the gutter the pointer is not above any row, so the row is resolved by vertical position.
+- **Root drop zone.** Shown only while dragging, it targets `after(last root item)`. Both mechanisms reuse the existing `moveItem(key, target, 'after')` call, so the server API, validation and draft handling are unchanged.
 - Only a completed drop reaches the server, as one semantic call: `moveItem(key, targetKey, 'before'|'after'|'inside')`. The drop event recomputes the position itself, so it never relies on a highlight left over from an earlier event. The server validates the call and re-renders the tree. There is no per-mousemove traffic, and no tree state is kept in JavaScript.
 - **Tree rows carry no Alpine directives.** Livewire's morph can move rows after a reorder and tear down the Alpine bindings of a moved element, so the drag and click listeners live on the root element and find their row through `closest('.mb-row')` and `data-key`. Collapsed items are hidden by a generated `<style wire:ignore>` block of `[data-key]` selectors. Livewire's own `wire:click` on the row buttons is not affected.
 - Expand and collapse state is saved in `localStorage` under a key per placement (`menu-builder.{placement}.collapsed`).
@@ -136,6 +146,34 @@ Alpine names on the root are specific (`toggleItem`, `expandAllItems`, and so on
 3. Loads the linked records with one `whereIn` query per model-backed type.
 4. Builds `ResolvedMenuItem`s recursively. Labels and URLs are resolved by the item type, link items go through `UrlResolver`, and items whose URL or record cannot be resolved are dropped. Items are marked `isCurrent` or `isActiveTrail`.
 
+## Rendering: attributes, render as and badges
+
+Rendering options are **shared keys inside the existing `data` JSON** (`render_as`, `attributes`, `attribute_target` and `badge_position`, defined as `MenuNode::DATA_*` constants). No migration is needed and existing rows keep working: a missing key means "automatic" or the default.
+
+- **Validation** lives in `MenuTreeGuard::validateItem()` next to the other common attributes. It checks the enum values, `render_as=link` only for types with a URL, attribute names and scalar values. `LinkType` excludes its URL and route rules when an item renders as a button or heading.
+- **Normalization** happens in `MenuNode` accessors, which `MenuBuilder` copies into `ResolvedMenuItem`. `HtmlAttributes::normalize()` drops invalid names (defense in depth for rows written around the guard), turns empty values into bare attributes and switches off boolean attributes set to `false`, `0`, `off` or `no`.
+- **Escaping.** `ComponentAttributeBag::__toString()` does *not* HTML-escape values; Blade escapes component attributes at compile time, but these attributes only exist at runtime. `HtmlAttributes::bag()` therefore escapes every value, and the components only ever print attributes through `ResolvedMenuItem::itemAttributes()` or `wrapperAttributes()`.
+- **Target.** Attributes go on the item element (`<a>`, `<button>` or heading) or on its `<li>` wrapper, never on both, never on structural elements (row, toggle, submenu) and never on children.
+
+## Frontend rendering
+
+Four anonymous components make up one renderer:
+
+| Component | Responsibility |
+| --- | --- |
+| `menu` | `<nav>`, variant (`dropdown`, `tree` or `columns`), assets |
+| `items` | one level: the `<li>` wrapper (plus wrapper attributes), the toggle button and the recursion into children |
+| `item` | the item's root element, icon, label and badges (the main override point) |
+| `badge` | the badge markup |
+
+`header`, `footer` and `sidebar` are one-line wrappers that pass a variant to `menu`. There is no placement-specific rendering logic. Dropdowns are derived from `hasChildren()` alone, at any depth.
+
+Behavior is split so that each part stays small:
+
+- **CSS** (`resources/dist/frontend/menu.css`) positions everything with logical properties, inside `:where()` (zero specificity). Submenus are an accordion by default (`[data-open]`). Above 48rem, the `dropdown` variant absolutely positions them: first level below the parent, deeper levels at `inset-inline-start: 100%`. The `.mb-flip` class mirrors them to the inline start.
+- **JS** (`resources/dist/frontend/menu.js`, no dependencies) handles only the toggle buttons (`data-open` and `aria-expanded`), `Escape`, click-outside, and the flip check. On hover, focus or open it measures the submenu against the viewport using the element's computed direction.
+- Both files are printed inline once per page (`@once`, with the Vite CSP nonce when set) and can be switched off with `menu-builder.frontend.assets`.
+
 ## Authorization
 
 `MenuAuthorizer` asks the policy registered for the menu item model for `viewAny`, `create`, `update`, `reorder`, `delete` and `publish`, with the placement key as the argument. Without a policy, access follows Filament's default: panel users may manage menus. Filament actions use `->authorize()`, so unauthorized actions are hidden and cannot be mounted or called. `moveItem()` checks `reorder` itself.
@@ -149,3 +187,6 @@ Alpine names on the root are specific (`toggleItem`, `expandAllItems`, and so on
 5. **Routes are validated when saving.** A route removed later makes future saves of that placement fail until the item is fixed. The frontend just hides it.
 6. **No keyboard reordering yet.** Drag & drop is pointer-based. Move up/down or indent/outdent actions would improve accessibility.
 7. **Unknown types and visibility rules are hidden on the frontend and rejected when saving.** This fails closed, but removing a type from code hides its items silently.
+8. **Rendering options share the `data` JSON with type data.** This avoids a migration, but custom item types must not use the reserved keys. A dedicated `options` column would separate them at the cost of a schema change.
+9. **Arbitrary attributes are a trusted-administrator feature.** Names and values cannot break the HTML, but `x-on:*` and `wire:*` attributes do run frontend behavior. That is intended, and it relies on menu editing being restricted to trusted users (see the policy).
+10. **Frontend assets are inline.** This needs no build step or publishing and works outside Filament. A strict CSP needs the Vite nonce, or the assets switched off in favor of the host's own bundle.
