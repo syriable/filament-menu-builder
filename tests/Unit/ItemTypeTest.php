@@ -11,8 +11,12 @@ use Syriable\Filament\Plugins\MenuBuilder\MenuItemType;
 use Syriable\Filament\Plugins\MenuBuilder\Tests\Fixtures\Category;
 use Syriable\Filament\Plugins\MenuBuilder\Tree\MenuNode;
 
-it('ships with heading and link types', function (): void {
-    expect(Menu::itemTypes())->toHaveKeys(['heading', 'link'])
+it('ships with heading, link and button types', function (): void {
+    expect(array_keys(Menu::itemTypes()))->toBe(['heading', 'link', 'button'])
+        ->and(Menu::itemType('button'))->toBeInstanceOf(Syriable\Filament\Plugins\MenuBuilder\ItemTypes\ButtonType::class)
+        ->and(Menu::itemType('button')->getRenderAs())->toBe(Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs::Button)
+        ->and(Menu::itemType('link')->getRenderAs())->toBe(Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs::Link)
+        ->and(Menu::itemType('heading')->getRenderAs())->toBe(Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs::Heading)
         ->and(Menu::itemType('heading'))->toBeInstanceOf(HeadingType::class)
         ->and(Menu::itemType('heading')->hasUrl())->toBeFalse()
         ->and(Menu::itemType('link'))->toBeInstanceOf(LinkType::class)

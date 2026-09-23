@@ -131,7 +131,7 @@ final readonly class MenuBuilder
             }
 
             $url = $type->resolveUrl($node, $record);
-            $renderAs = $node->renderAs() ?? ($type->hasUrl() ? RenderAs::Link : RenderAs::Heading);
+            $renderAs = $node->renderAs() ?? $type->getRenderAs();
 
             // A link without a URL (missing route, deleted record, ...) is left out.
             if ($renderAs === RenderAs::Link && $url === null) {

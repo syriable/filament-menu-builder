@@ -18,6 +18,12 @@ return [
     'types' => [
         'heading' => 'Heading',
         'link' => 'Link',
+        'button' => 'Button',
+    ],
+
+    'icon_positions' => [
+        'before' => 'Before',
+        'after' => 'After',
     ],
 
     'link_types' => [
@@ -85,6 +91,12 @@ return [
         'attributes' => 'HTML attributes',
         'attributes_help' => 'Any attribute, e.g. class, id, data-*, aria-*, x-on:click or wire:click. Leave the value empty for a bare attribute.',
         'attribute' => 'Attribute',
+        'add_attribute' => 'Add attribute',
+        'button_size' => 'Size',
+        'icon_position' => 'Icon position',
+        'outlined' => 'Outlined',
+        'button_url' => 'URL (optional)',
+        'button_url_help' => 'Leave empty for a plain button that only triggers its attributes (e.g. opens a modal). With a URL the button links there.',
         'attribute_target' => 'Apply attributes to',
         'visibility' => 'Visible to',
         'is_active' => 'Active',

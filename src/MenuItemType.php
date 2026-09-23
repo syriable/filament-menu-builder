@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Tree\MenuNode;
 
 /**
@@ -41,6 +42,8 @@ class MenuItemType
     protected bool $canHaveChildren = true;
 
     protected bool $hasUrl = true;
+
+    protected ?RenderAs $renderAs = null;
 
     /** @var class-string<Model>|null */
     protected ?string $model = null;
@@ -143,6 +146,22 @@ class MenuItemType
         $this->modifyQueryUsing = $modifyQueryUsing;
 
         return $this;
+    }
+
+    /**
+     * The element items of this type render as. Defaults to a link for
+     * types with a URL and to a heading otherwise.
+     */
+    public function renderAs(?RenderAs $renderAs): static
+    {
+        $this->renderAs = $renderAs;
+
+        return $this;
+    }
+
+    public function getRenderAs(): RenderAs
+    {
+        return $this->renderAs ?? ($this->hasUrl ? RenderAs::Link : RenderAs::Heading);
     }
 
     public function resolveUrlUsing(?Closure $callback): static

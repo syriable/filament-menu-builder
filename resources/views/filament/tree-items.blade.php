@@ -52,7 +52,7 @@
                 <x-filament::badge size="sm" :color="$node->badgeColor ?? 'gray'">{{ $node->badge }}</x-filament::badge>
             @endif
 
-            @if ($node->renderAs() === \Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs::Button)
+            @if ($node->type !== \Syriable\Filament\Plugins\MenuBuilder\ItemTypes\ButtonType::KEY && $node->renderAs() === \Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs::Button)
                 <x-filament::badge size="sm" color="primary" icon="heroicon-m-cursor-arrow-rays">{{ __('menu-builder::menu-builder.render_as.button') }}</x-filament::badge>
             @endif
 
