@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Syriable\Filament\Plugins\MenuBuilder\Tree;
 
+use Closure;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Validation\Rule;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\AttributeTarget;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Exceptions\InvalidMenuTree;
 use Syriable\Filament\Plugins\MenuBuilder\MenuItemType;
 use Syriable\Filament\Plugins\MenuBuilder\MenuPlacement;
 use Syriable\Filament\Plugins\MenuBuilder\MenuRegistry;
+use Syriable\Filament\Plugins\MenuBuilder\Support\HtmlAttributes;
 
 /**
  * The single source of truth for menu tree rules.
@@ -164,6 +169,21 @@ final readonly class MenuTreeGuard
             }
         }
 
+        $rendering = $this->validator->make($node->data, [
+            MenuNode::DATA_RENDER_AS => ['nullable', Rule::enum(RenderAs::class)->only(
+                $type->hasUrl() ? RenderAs::cases() : [RenderAs::Button, RenderAs::Heading],
+            )],
+            MenuNode::DATA_ATTRIBUTE_TARGET => ['nullable', Rule::enum(AttributeTarget::class)],
+            MenuNode::DATA_BADGE_POSITION => ['nullable', Rule::enum(BadgePosition::class)],
+            MenuNode::DATA_ATTRIBUTES => ['nullable', 'array', $this->htmlAttributesRule()],
+        ]);
+
+        foreach ($rendering->errors()->messages() as $field => $messages) {
+            foreach ($messages as $message) {
+                $violations[] = new TreeViolation($message, $node->key, 'data.'.$field);
+            }
+        }
+
         $rules = $type->getRules();
 
         if ($rules !== []) {
@@ -177,6 +197,31 @@ final readonly class MenuTreeGuard
         }
 
         return $violations;
+    }
+
+    /**
+     * Attribute names must not be able to break out of the attribute syntax;
+     * values must be plain scalars.
+     */
+    private function htmlAttributesRule(): Closure
+    {
+        return static function (string $attribute, mixed $value, Closure $fail): void {
+            if (! is_array($value)) {
+                return;
+            }
+
+            foreach ($value as $name => $attributeValue) {
+                if (! HtmlAttributes::isValidName(is_string($name) ? trim($name) : $name)) {
+                    $fail(__('menu-builder::menu-builder.validation.attribute_name', ['name' => (string) $name]));
+
+                    continue;
+                }
+
+                if (! (is_scalar($attributeValue) || $attributeValue === null) || mb_strlen((string) $attributeValue) > 2000) {
+                    $fail(__('menu-builder::menu-builder.validation.attribute_value', ['name' => (string) $name]));
+                }
+            }
+        };
     }
 
     private function describe(MenuNode $node): string

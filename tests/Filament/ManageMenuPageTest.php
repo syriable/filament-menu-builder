@@ -344,6 +344,103 @@ it('creates model backed items', function (): void {
     expect(Menu::build('sidebar')->first()?->label)->toBe('Shoes');
 });
 
+describe('rendering options', function (): void {
+    it('stores arbitrary attributes, render target and badge position from the form', function (): void {
+        $home = keyOf('Home');
+
+        $component = livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction(TestAction::make('editItem')->arguments(['key' => $home]), data: [
+                'badge' => 'New',
+                'data' => [
+                    'badge_position' => 'top',
+                    'attribute_target' => 'wrapper',
+                    'attributes' => ['class' => 'btn btn-primary', 'data-modal' => 'login', 'x-on:click' => 'open = true'],
+                ],
+            ])
+            ->assertHasNoActionErrors()
+            ->callAction('save');
+
+        $item = Menu::build('header')->first();
+
+        expect(draftOf($component)->get($home)->data)->toMatchArray(['url' => '/', 'badge_position' => 'top'])
+            ->and($item->attributes)->toBe(['class' => 'btn btn-primary', 'data-modal' => 'login', 'x-on:click' => 'open = true'])
+            ->and($item->attributeTarget->value)->toBe('wrapper')
+            ->and($item->badgePosition->value)->toBe('top');
+    });
+
+    it('rejects malformed attribute names in the form', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction(TestAction::make('editItem')->arguments(['key' => keyOf('Home')]), data: [
+                'data' => ['attributes' => ['bad name' => 'x']],
+            ])
+            ->assertHasActionErrors(['data.attributes']);
+    });
+
+    it('creates buttons without a URL', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Login',
+                'data' => ['render_as' => 'button', 'link_type' => 'url', 'url' => '', 'attributes' => ['data-modal' => 'login']],
+            ])
+            ->assertHasNoActionErrors()
+            ->callAction('save');
+
+        $login = Menu::build('header')->last();
+
+        expect($login->isButton())->toBeTrue()
+            ->and($login->attributes)->toBe(['data-modal' => 'login']);
+    });
+
+    it('hides the link target fields for buttons', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->fillForm(['type' => 'link'])
+            ->assertFormFieldVisible('item-fields.data.url')
+            ->fillForm(['data' => ['render_as' => 'button']])
+            ->assertFormFieldHidden('item-fields.data.url');
+    });
+});
+
+describe('moving items out of their parent', function (): void {
+    it('moves a child to the root after its parent (outdent)', function (): void {
+        $component = livewire(ManageMenu::class, ['placement' => 'header'])
+            ->call('moveItem', keyOf('Development'), keyOf('Services'), 'after');
+
+        expect(draftLabels(draftOf($component)))->toBe(['Home', 'Services', 'Development'])
+            ->and(draftLabels(draftOf($component), keyOf('Services')))->toBe(['Design']);
+    });
+
+    it('moves a nested child to the end of the root level', function (): void {
+        $component = livewire(ManageMenu::class, ['placement' => 'header'])
+            ->call('moveItem', keyOf('Development'), keyOf('Design'), 'inside')
+            ->call('moveItem', keyOf('Development'), keyOf('Services'), 'after');
+
+        expect(draftLabels(draftOf($component)))->toBe(['Home', 'Services', 'Development'])
+            ->and(draftLabels(draftOf($component), keyOf('Design')))->toBe([]);
+    });
+
+    it('persists the new parent when saved', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->call('moveItem', keyOf('Design'), keyOf('Services'), 'after')
+            ->call('moveItem', keyOf('Home'), keyOf('Services'), 'inside')
+            ->callAction('save');
+
+        expect(publishedLabels())->toBe(['Services', 'Design'])
+            ->and(MenuItem::query()->where('label', 'Design')->value('parent_id'))->toBeNull()
+            ->and(MenuItem::query()->where('label', 'Home')->value('parent_id'))->toBe(MenuItem::query()->where('label', 'Services')->value('id'));
+    });
+
+    it('offers a root drop zone to editors who may reorder', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])->assertSeeHtml('data-root-drop');
+
+        Gate::policy(MenuItem::class, MenuItemPolicy::class);
+        MenuItemPolicy::$denied = ['reorder:header'];
+
+        livewire(ManageMenu::class, ['placement' => 'header'])->assertDontSeeHtml('data-root-drop');
+    });
+});
+
 describe('authorization', function (): void {
     beforeEach(function (): void {
         Gate::policy(MenuItem::class, MenuItemPolicy::class);

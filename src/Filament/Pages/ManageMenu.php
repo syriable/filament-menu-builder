@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Syriable\Filament\Plugins\MenuBuilder\Filament\Pages;
 
 use Filament\Actions\Action;
+use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -24,6 +25,9 @@ use Livewire\Attributes\Locked;
 use Override;
 use Syriable\Filament\Plugins\MenuBuilder\Drafts\MenuDraft;
 use Syriable\Filament\Plugins\MenuBuilder\Drafts\MenuDraftManager;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\AttributeTarget;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Exceptions\DraftNotFound;
 use Syriable\Filament\Plugins\MenuBuilder\Exceptions\InvalidMenuTree;
 use Syriable\Filament\Plugins\MenuBuilder\Exceptions\StaleMenu;
@@ -403,9 +407,42 @@ class ManageMenu extends Page
                     Select::make('badge_color')
                         ->label(__('menu-builder::menu-builder.fields.badge_color'))
                         ->options($colors),
+                    Group::make([
+                        ToggleButtons::make(MenuNode::DATA_BADGE_POSITION)
+                            ->label(__('menu-builder::menu-builder.fields.badge_position'))
+                            ->options($this->enumOptions(BadgePosition::cases()))
+                            ->default(BadgePosition::End->value)
+                            ->inline()
+                            ->grouped(),
+                    ])->statePath('data'),
                 ])
                 ->columns(2)
                 ->collapsible()
+                ->compact(),
+            Section::make(__('menu-builder::menu-builder.fields.rendering'))
+                ->schema([
+                    Select::make(MenuNode::DATA_RENDER_AS)
+                        ->label(__('menu-builder::menu-builder.fields.render_as'))
+                        ->placeholder(__('menu-builder::menu-builder.render_as.auto'))
+                        ->options($this->enumOptions($definition->hasUrl() ? RenderAs::cases() : [RenderAs::Button, RenderAs::Heading]))
+                        ->helperText(__('menu-builder::menu-builder.fields.render_as_help'))
+                        ->live(),
+                    Select::make(MenuNode::DATA_ATTRIBUTE_TARGET)
+                        ->label(__('menu-builder::menu-builder.fields.attribute_target'))
+                        ->options($this->enumOptions(AttributeTarget::cases()))
+                        ->default(AttributeTarget::Item->value)
+                        ->selectablePlaceholder(false),
+                    KeyValue::make(MenuNode::DATA_ATTRIBUTES)
+                        ->label(__('menu-builder::menu-builder.fields.attributes'))
+                        ->keyLabel(__('menu-builder::menu-builder.fields.attribute'))
+                        ->valueLabel(__('menu-builder::menu-builder.fields.value'))
+                        ->helperText(__('menu-builder::menu-builder.fields.attributes_help'))
+                        ->columnSpanFull(),
+                ])
+                ->statePath('data')
+                ->columns(2)
+                ->collapsible()
+                ->collapsed()
                 ->compact(),
             Grid::make(2)->schema([
                 Select::make('visibility')
@@ -420,6 +457,21 @@ class ManageMenu extends Page
                     ->inline(false),
             ]),
         ];
+    }
+
+    /**
+     * @param  array<RenderAs|AttributeTarget|BadgePosition>  $cases
+     * @return array<string, string>
+     */
+    protected function enumOptions(array $cases): array
+    {
+        $options = [];
+
+        foreach ($cases as $case) {
+            $options[$case->value] = $case->getLabel();
+        }
+
+        return $options;
     }
 
     /**

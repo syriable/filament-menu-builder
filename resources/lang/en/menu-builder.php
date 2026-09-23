@@ -31,6 +31,28 @@ return [
         'authenticated' => 'Signed-in users only',
     ],
 
+    'render_as' => [
+        'auto' => 'Automatic',
+        'link' => 'Link',
+        'button' => 'Button',
+        'heading' => 'Heading',
+    ],
+
+    'attribute_target' => [
+        'item' => 'Item (link, button or heading)',
+        'wrapper' => 'Wrapper (list item)',
+    ],
+
+    'badge_position' => [
+        'start' => 'Start',
+        'end' => 'End',
+        'top' => 'Top',
+    ],
+
+    'frontend' => [
+        'toggle' => 'Toggle :item submenu',
+    ],
+
     'colors' => [
         'primary' => 'Primary',
         'gray' => 'Gray',
@@ -56,6 +78,14 @@ return [
         'color' => 'Color',
         'badge' => 'Badge',
         'badge_color' => 'Badge color',
+        'badge_position' => 'Badge position',
+        'rendering' => 'Rendering',
+        'render_as' => 'Render as',
+        'render_as_help' => 'Automatic renders links as links and other items as headings. Buttons need no URL; use attributes to connect them to your frontend.',
+        'attributes' => 'HTML attributes',
+        'attributes_help' => 'Any attribute, e.g. class, id, data-*, aria-*, x-on:click or wire:click. Leave the value empty for a bare attribute.',
+        'attribute' => 'Attribute',
+        'attribute_target' => 'Apply attributes to',
         'visibility' => 'Visible to',
         'is_active' => 'Active',
     ],
@@ -89,6 +119,7 @@ return [
     'tree' => [
         'empty' => 'This menu has no items yet.',
         'drag' => 'Drag to move',
+        'drop_root' => 'Drop here to move to the top level',
         'toggle' => 'Expand or collapse',
         'new' => 'New',
         'inactive' => 'Inactive',
@@ -116,6 +147,8 @@ return [
         'cycle' => 'An item cannot be moved below itself or one of its descendants.',
         'missing_item' => 'The menu item ":item" no longer exists.',
         'missing_parent' => 'The parent item does not exist in this menu.',
+        'attribute_name' => '":name" is not a valid HTML attribute name.',
+        'attribute_value' => 'The value of the ":name" attribute must be plain text.',
         'route_missing' => 'The route ":route" does not exist.',
         'route_parameters' => 'The route ":route" needs a value for each of its required parameters.',
     ],

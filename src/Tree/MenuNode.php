@@ -7,7 +7,11 @@ namespace Syriable\Filament\Plugins\MenuBuilder\Tree;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\AttributeTarget;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Models\MenuItem;
+use Syriable\Filament\Plugins\MenuBuilder\Support\HtmlAttributes;
 
 /**
  * Immutable attributes of a single menu item.
@@ -27,7 +31,19 @@ final readonly class MenuNode implements Arrayable
     ];
 
     /**
-     * @param  array<string, mixed>  $data  Type specific data (url, route, record id, ...).
+     * Keys of `data` shared by every item type. They configure how an item is
+     * rendered; everything else in `data` belongs to the item type.
+     */
+    public const string DATA_ATTRIBUTES = 'attributes';
+
+    public const string DATA_RENDER_AS = 'render_as';
+
+    public const string DATA_ATTRIBUTE_TARGET = 'attribute_target';
+
+    public const string DATA_BADGE_POSITION = 'badge_position';
+
+    /**
+     * @param  array<string, mixed>  $data  Type specific data (url, route, record id, ...) and rendering options.
      */
     public function __construct(
         public string $key,
@@ -112,6 +128,38 @@ final readonly class MenuNode implements Arrayable
         $attributes = Arr::only($attributes, self::EDITABLE_ATTRIBUTES);
 
         return self::fromAttributes($this->key, $this->id, [...$this->attributes(), ...$attributes]);
+    }
+
+    /**
+     * The explicitly chosen root element, or null to derive it from the type.
+     */
+    public function renderAs(): ?RenderAs
+    {
+        $value = $this->data[self::DATA_RENDER_AS] ?? null;
+
+        return is_string($value) ? RenderAs::tryFrom($value) : null;
+    }
+
+    /**
+     * @return array<string, string|true>
+     */
+    public function htmlAttributes(): array
+    {
+        return HtmlAttributes::normalize($this->data[self::DATA_ATTRIBUTES] ?? []);
+    }
+
+    public function attributeTarget(): AttributeTarget
+    {
+        $value = $this->data[self::DATA_ATTRIBUTE_TARGET] ?? null;
+
+        return (is_string($value) ? AttributeTarget::tryFrom($value) : null) ?? AttributeTarget::Item;
+    }
+
+    public function badgePosition(): BadgePosition
+    {
+        $value = $this->data[self::DATA_BADGE_POSITION] ?? null;
+
+        return (is_string($value) ? BadgePosition::tryFrom($value) : null) ?? BadgePosition::End;
     }
 
     public function isNew(): bool
