@@ -1,0 +1,82 @@
+{
+    "name": "syriable/filament-menu-builder",
+    "description": "A lightweight, extensible menu builder for Filament with dynamic placements, drag & drop tree editing and draft/publish workflow.",
+    "keywords": [
+        "syriable",
+        "laravel",
+        "filament",
+        "filament-plugin",
+        "menu",
+        "menu-builder",
+        "navigation"
+    ],
+    "homepage": "https://github.com/syriable/filament-menu-builder",
+    "support": {
+        "issues": "https://github.com/syriable/filament-menu-builder/issues",
+        "source": "https://github.com/syriable/filament-menu-builder"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Syriable",
+            "email": "alkhatib.syr@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "filament/filament": "^5.0",
+        "illuminate/contracts": "^13.0",
+        "spatie/laravel-package-tools": "^1.92"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.18",
+        "nunomaduro/collision": "^8.6",
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^4.0|^5.0",
+        "pestphp/pest-plugin-arch": "^4.0|^5.0",
+        "pestphp/pest-plugin-laravel": "^4.0|^5.0",
+        "pestphp/pest-plugin-livewire": "^4.0|^5.0",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Syriable\\Filament\\Plugins\\MenuBuilder\\": "src/",
+            "Syriable\\Filament\\Plugins\\MenuBuilder\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Syriable\\Filament\\Plugins\\MenuBuilder\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "analyse": "vendor/bin/phpstan analyse",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/package-versions-deprecated": true,
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Syriable\\Filament\\Plugins\\MenuBuilder\\MenuBuilderServiceProvider"
+            ],
+            "aliases": {
+                "Menu": "Syriable\\Filament\\Plugins\\MenuBuilder\\Facades\\Menu"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
