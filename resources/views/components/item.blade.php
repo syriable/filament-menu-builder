@@ -1,80 +1,80 @@
 {{--
-    The root element of one menu item: <a> for links, Filament's
-    <x-filament::button> for buttons and $headingTag (default <span>) for headings. The item's custom attributes are
-    applied here (unless it targets its wrapper) and can override the defaults.
+    The element of one menu item, built from Filament components:
+    links use <x-filament::link>, buttons <x-filament::button> and headings a
+    semibold <x-filament::link> rendered as $headingTag (default <span>).
 
-    Publish the package views to customize this markup.
+    With `trigger`, the item opens a dropdown: it becomes a <button> (its page,
+    if any, is listed as the first dropdown entry) and gets a chevron.
+
+    The item's custom HTML attributes are applied here (unless they target the
+    wrapper). Publish the package views to customize this markup.
 --}}
 @props([
     'item',
     'level' => 1,
     'headingTag' => 'span',
+    'trigger' => false,
 ])
 
 @php
     use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
+    use Syriable\Filament\Plugins\MenuBuilder\Support\Icons;
 
-    [$tag, $defaults] = match (true) {
-        $item->isLink() => ['a', array_filter([
-            'href' => $item->url,
-            'aria-current' => $item->isCurrent ? 'page' : null,
-            'target' => $item->openInNewTab ? '_blank' : null,
-            'rel' => $item->openInNewTab ? 'noopener noreferrer' : null,
-        ])],
-        $item->isButton() => ['button', ['type' => 'button']],
-        default => [preg_match('/^[a-z][a-z0-9-]*$/', $headingTag) ? $headingTag : 'span', []],
-    };
+    $icon = Icons::safe($item->icon);
+    $topBadge = $item->hasBadge() && $item->badgePosition === BadgePosition::Top ? $item->badge : null;
+    $color = $item->color ?? ($item->isActive() ? 'primary' : 'gray');
+    $headingTag = preg_match('/^[a-z][a-z0-9-]*$/', $headingTag) ? $headingTag : 'span';
 
     $kind = match (true) {
-        $item->isLink() => 'link',
         $item->isButton() => 'button',
+        $item->isLink() => 'link',
         default => 'heading',
     };
 
-    $icon = filled($item->icon)
-        ? rescue(fn () => svg($item->icon, 'mb-icon-svg')->toHtml(), null, report: false)
-        : null;
+    $elementAttributes = $item->itemAttributes()
+        ->class(['mb-item', 'mb-item-'.$kind, 'mb-trigger' => $trigger])
+        ->merge(array_filter([
+            'aria-current' => ! $trigger && $item->isCurrent && $item->isLink() ? 'page' : null,
+            'rel' => ! $trigger && $item->openInNewTab && $item->url !== null ? 'noopener noreferrer' : null,
+        ]));
+
+    $label = view('menu-builder::frontend.label', ['item' => $item, 'trigger' => $trigger]);
 @endphp
 
 @if ($item->isButton())
-    {{-- Buttons use Filament's button component: color, size, outline and icon come from the item. --}}
     <x-filament::button
-        :tag="$item->url !== null ? 'a' : 'button'"
-        :href="$item->url"
-        :target="$item->openInNewTab ? '_blank' : null"
+        :tag="! $trigger && $item->url !== null ? 'a' : 'button'"
+        :href="$trigger ? null : $item->url"
+        :target="! $trigger && $item->openInNewTab ? '_blank' : null"
         :color="$item->color ?? 'primary'"
         :size="$item->buttonOption('size', 'md')"
         :outlined="(bool) $item->buttonOption('outlined', false)"
-        :icon="$icon !== null ? $item->icon : null"
+        :icon="$icon"
         :icon-position="$item->buttonOption('icon_position', 'before')"
-        :badge="$item->hasBadge() && $item->badgePosition === BadgePosition::Top ? $item->badge : null"
+        :badge="$topBadge"
         :badge-color="$item->badgeColor ?? 'primary'"
-        :attributes="$item->itemAttributes()->class(['mb-item', 'mb-item-button'])"
-    >
-        @if ($item->hasBadge() && $item->badgePosition === BadgePosition::Start)
-            <x-menu-builder::badge :item="$item" />
-        @endif
-
-        {{ $item->label }}
-
-        @if ($item->hasBadge() && $item->badgePosition === BadgePosition::End)
-            <x-menu-builder::badge :item="$item" />
-        @endif
-    </x-filament::button>
+        :attributes="$elementAttributes"
+    >{{ $label }}</x-filament::button>
+@elseif ($item->isLink() || $trigger)
+    <x-filament::link
+        :tag="! $trigger && $item->isLink() ? 'a' : 'button'"
+        :href="! $trigger && $item->isLink() ? $item->url : null"
+        :target="! $trigger && $item->openInNewTab ? '_blank' : null"
+        :color="$color"
+        :icon="$icon"
+        :weight="$item->isHeading() ? 'semibold' : null"
+        :badge="$topBadge"
+        :badge-color="$item->badgeColor ?? 'primary'"
+        :attributes="$elementAttributes"
+    >{{ $label }}</x-filament::link>
 @else
-<{{ $tag }} {{ $item->itemAttributes()->class(['mb-item', 'mb-item-'.$kind])->merge($defaults) }}>
-    @if ($icon)
-        <span class="mb-icon" aria-hidden="true">{!! $icon !!}</span>
-    @endif
-
-    @if ($item->hasBadge() && $item->badgePosition === BadgePosition::Start)
-        <x-menu-builder::badge :item="$item" />
-    @endif
-
-    <span class="mb-label">{{ $item->label }}@if ($item->hasBadge() && $item->badgePosition === BadgePosition::Top)<x-menu-builder::badge :item="$item" />@endif</span>
-
-    @if ($item->hasBadge() && $item->badgePosition === BadgePosition::End)
-        <x-menu-builder::badge :item="$item" />
-    @endif
-</{{ $tag }}>
+    <x-filament::link
+        :tag="$headingTag"
+        :color="$item->color ?? 'gray'"
+        :icon="$icon"
+        weight="semibold"
+        :badge="$topBadge"
+        :badge-color="$item->badgeColor ?? 'primary'"
+        :attributes="$elementAttributes"
+    >{{ $label }}</x-filament::link>
 @endif

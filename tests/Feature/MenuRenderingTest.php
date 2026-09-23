@@ -57,25 +57,34 @@ function one(DOMXPath $xpath, string $query): DOMElement
 }
 
 describe('root elements', function (): void {
-    it('renders links as anchors', function (): void {
+    it('renders links with the Filament link component', function (): void {
         $link = one(renderMenu([resolved('About')]), '//a');
 
         expect($link->getAttribute('href'))->toBe('/about')
-            ->and($link->getAttribute('class'))->toContain('mb-item-link')
+            ->and($link->getAttribute('class'))->toContain('fi-link')->toContain('mb-item-link')
             ->and(trim($link->textContent))->toBe('About');
     });
 
-    it('renders headings as spans without a link', function (): void {
+    it('renders headings as a semibold Filament link without a URL', function (): void {
         $xpath = renderMenu([resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading])]);
 
+        $heading = one($xpath, '//span[contains(@class, "mb-item-heading")]');
+
         expect($xpath->query('//a')->length)->toBe(0)
-            ->and(one($xpath, '//span[contains(@class, "mb-item-heading")]')->textContent)->toContain('Services');
+            ->and($heading->getAttribute('class'))->toContain('fi-link')->toContain('fi-font-semibold')
+            ->and($heading->textContent)->toContain('Services');
     });
 
     it('renders headings with a configurable tag', function (): void {
         $xpath = renderMenu([resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading])], 'heading-tag="strong"');
 
         expect(one($xpath, '//strong[contains(@class, "mb-item-heading")]'))->toBeInstanceOf(DOMElement::class);
+    });
+
+    it('falls back to a span for an invalid heading tag', function (): void {
+        $xpath = renderMenu([resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading])], 'heading-tag="h2 onclick"');
+
+        expect(one($xpath, '//span[contains(@class, "mb-item-heading")]'))->toBeInstanceOf(DOMElement::class);
     });
 
     it('renders buttons without a URL', function (): void {
@@ -100,8 +109,23 @@ describe('root elements', function (): void {
         ]);
 
         expect(one($xpath, '//a[@href="/home"]')->getAttribute('aria-current'))->toBe('page')
+            ->and(one($xpath, '//a[@href="/home"]')->getAttribute('class'))->toContain('fi-color-primary')
             ->and(one($xpath, '//a[@href="https://example.com"]')->getAttribute('target'))->toBe('_blank')
             ->and(one($xpath, '//a[@href="https://example.com"]')->getAttribute('rel'))->toBe('noopener noreferrer');
+    });
+
+    it('uses the item color', function (): void {
+        expect(one(renderMenu([resolved('Sale', ['color' => 'danger'])]), '//a')->getAttribute('class'))->toContain('fi-color-danger');
+    });
+
+    it('renders known icons and skips unknown ones', function (): void {
+        $xpath = renderMenu([
+            resolved('Home', ['icon' => 'heroicon-o-home']),
+            resolved('Broken', ['icon' => 'heroicon-o-does-not-exist']),
+        ]);
+
+        expect($xpath->query('//a[@href="/home"]//svg')->length)->toBe(1)
+            ->and($xpath->query('//a[@href="/broken"]//svg')->length)->toBe(0);
     });
 });
 
@@ -149,13 +173,14 @@ describe('attributes', function (): void {
             ->and(one($xpath, '//a')->getAttribute('rel'))->toBe('external');
     });
 
-    it('escapes attribute values', function (): void {
+    it('escapes attribute values exactly once', function (): void {
         $html = Blade::render('<x-menu-builder::menu :items="$items" />', ['items' => [
-            resolved('Evil', ['attributes' => ['title' => '"><script>alert(1)</script>', 'data-x' => "a' onmouseover='b"]]),
+            resolved('Evil', ['attributes' => ['title' => '"><script>alert(1)</script> & co', 'data-x' => "a' onmouseover='b"]]),
         ]]);
 
         expect($html)->not->toContain('<script>alert(1)</script>')
-            ->toContain('title="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"')
+            ->not->toContain('&amp;quot;')
+            ->toContain('title="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt; &amp; co"')
             ->toContain('data-x="a&#039; onmouseover=&#039;b"');
     });
 
@@ -208,6 +233,8 @@ describe('attributes', function (): void {
 
     it('does not move item attributes to the wrapper or children', function (): void {
         $xpath = renderMenu([resolved('Services', [
+            'url' => null,
+            'renderAs' => RenderAs::Heading,
             'attributes' => ['data-section' => 'services'],
             'children' => [resolved('Design', ['depth' => 2])],
         ])]);
@@ -215,62 +242,132 @@ describe('attributes', function (): void {
         $elements = $xpath->query('//*[@data-section]');
 
         expect($elements->length)->toBe(1)
-            ->and($elements->item(0)->nodeName)->toBe('a')
-            ->and($elements->item(0)->getAttribute('href'))->toBe('/services');
+            ->and($elements->item(0)->getAttribute('class'))->toContain('mb-trigger');
+    });
+});
+
+describe('dropdowns', function (): void {
+    it('renders root items and leaves without dropdowns', function (): void {
+        $xpath = renderMenu([resolved('Home'), resolved('About')]);
+
+        expect($xpath->query('//ul[contains(@class, "mb-root")]/li')->length)->toBe(2)
+            ->and($xpath->query('//*[contains(@class, "fi-dropdown")]')->length)->toBe(0)
+            ->and($xpath->query('//*[@data-mb-toggle]')->length)->toBe(0);
+    });
+
+    it('turns items with children into Filament dropdowns', function (): void {
+        $xpath = renderMenu([resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+            resolved('Web', ['depth' => 2]),
+            resolved('Design', ['depth' => 2]),
+        ]])]);
+
+        $dropdown = one($xpath, '//div[contains(@class, "fi-dropdown ")]');
+        $trigger = one($xpath, '//div[contains(@class, "fi-dropdown-trigger")]/button');
+
+        expect($dropdown->getAttribute('x-data'))->toBe('filamentDropdown')
+            ->and($dropdown->getAttribute('data-level'))->toBe('1')
+            ->and($trigger->getAttribute('class'))->toContain('fi-link')->toContain('mb-trigger')
+            ->and($xpath->query('.//svg[contains(@class, "mb-chevron")]', $trigger)->length)->toBe(1)
+            ->and(one($xpath, '//div[contains(@class, "fi-dropdown-panel")]')->getAttribute('x-float.placement.bottom-start.flip.shift.offset'))->not->toBeNull()
+            ->and($xpath->query('//div[contains(@class, "fi-dropdown-panel")]//a[contains(@class, "fi-dropdown-list-item")]')->length)->toBe(2);
+    });
+
+    it('lists the page of a parent link as the first entry', function (): void {
+        $xpath = renderMenu([resolved('Services', ['isCurrent' => true, 'children' => [resolved('Web', ['depth' => 2])]])]);
+
+        $links = $xpath->query('//div[contains(@class, "fi-dropdown-panel")]//a');
+
+        expect($xpath->query('//div[contains(@class, "fi-dropdown-trigger")]/button')->length)->toBe(1)
+            ->and($links->length)->toBe(2)
+            ->and($links->item(0)->getAttribute('href'))->toBe('/services')
+            ->and($links->item(0)->getAttribute('class'))->toContain('mb-parent-link')
+            ->and($links->item(0)->getAttribute('aria-current'))->toBe('page')
+            ->and($links->item(1)->getAttribute('href'))->toBe('/web');
+    });
+
+    it('renders headings in a panel as dropdown headers', function (): void {
+        $xpath = renderMenu([resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+            resolved('Group', ['depth' => 2, 'url' => null, 'renderAs' => RenderAs::Heading]),
+        ]])]);
+
+        expect(one($xpath, '//div[contains(@class, "fi-dropdown-header")]')->textContent)->toContain('Group');
+    });
+
+    it('renders button items in a panel as Filament buttons', function (): void {
+        $xpath = renderMenu([resolved('Account', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+            resolved('Sign up', ['depth' => 2, 'type' => 'button', 'url' => '/register', 'renderAs' => RenderAs::Button, 'color' => 'success']),
+        ]])]);
+
+        expect(one($xpath, '//div[contains(@class, "mb-dropdown-entry")]/a[contains(@class, "fi-btn")]')->getAttribute('class'))
+            ->toContain('fi-color-success');
+    });
+
+    it('supports arbitrarily nested dropdowns opening towards the inline end', function (string $direction, string $placement): void {
+        $xpath = renderMenu([resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+            resolved('Development', ['depth' => 2, 'url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+                resolved('Laravel', ['depth' => 3]),
+                resolved('Mobile', ['depth' => 3, 'url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+                    resolved('iOS', ['depth' => 4]),
+                    resolved('Android', ['depth' => 4]),
+                ]]),
+            ]]),
+        ]])], 'direction="'.$direction.'"');
+
+        $nested = one($xpath, '//div[contains(@class, "mb-dropdown")][@data-level="3"]');
+
+        expect($xpath->query('//div[contains(@class, "mb-dropdown")]')->length)->toBe(3)
+            ->and(one($xpath, '//div[@data-level="2"]/div[contains(@class, "fi-dropdown-trigger")]/button')->getAttribute('class'))->toContain('fi-dropdown-list-item')
+            ->and($xpath->query('div[contains(@class, "fi-dropdown-panel")]', $nested)->item(0)->hasAttribute("x-float.placement.{$placement}.flip.shift.offset"))->toBeTrue()
+            ->and($xpath->query('.//a', $nested)->item(0)->getAttribute('href'))->toBe('/ios');
+    })->with([
+        'ltr' => ['ltr', 'right-start'],
+        'rtl' => ['rtl', 'left-start'],
+    ]);
+
+    it('treats empty children as a leaf', function (): void {
+        $xpath = renderMenu([resolved('Home', ['children' => []])]);
+
+        expect($xpath->query('//*[contains(@class, "fi-dropdown")]')->length)->toBe(0);
     });
 });
 
 describe('tree', function (): void {
-    it('renders root items and leaves without dropdown controls', function (): void {
-        $xpath = renderMenu([resolved('Home'), resolved('About')]);
-
-        expect($xpath->query('//ul[contains(@class, "mb-root")]/li')->length)->toBe(2)
-            ->and($xpath->query('//*[@data-mb-toggle]')->length)->toBe(0)
-            ->and($xpath->query('//ul[contains(@class, "mb-submenu")]')->length)->toBe(0);
-    });
-
-    it('turns items with children into dropdowns', function (): void {
-        $xpath = renderMenu([resolved('Services', ['children' => [resolved('Web', ['depth' => 2]), resolved('Design', ['depth' => 2])]])]);
+    it('renders accordions with a Filament icon button toggle', function (): void {
+        $xpath = renderMenu([resolved('Services', ['children' => [resolved('Web', ['depth' => 2]), resolved('Design', ['depth' => 2])]])], 'variant="tree"');
 
         $entry = one($xpath, '//li[contains(@class, "mb-has-children")]');
         $toggle = one($xpath, '//button[@data-mb-toggle]');
         $submenu = one($xpath, '//ul[contains(@class, "mb-submenu")]');
 
-        expect($toggle->getAttribute('aria-expanded'))->toBe('false')
+        expect($toggle->getAttribute('class'))->toContain('fi-icon-btn')
+            ->and($toggle->getAttribute('aria-label'))->toContain('Services')
+            ->and($toggle->getAttribute('aria-expanded'))->toBe('false')
             ->and($toggle->getAttribute('aria-controls'))->toBe($submenu->getAttribute('id'))
             ->and($submenu->getAttribute('data-level'))->toBe('2')
             ->and($submenu->parentNode->isSameNode($entry))->toBeTrue()
-            ->and($xpath->query('li', $submenu)->length)->toBe(2);
+            ->and($xpath->query('li', $submenu)->length)->toBe(2)
+            ->and(one($xpath, '//a[@href="/services"]')->getAttribute('class'))->not->toContain('mb-trigger');
     });
 
-    it('supports arbitrarily nested dropdowns', function (): void {
+    it('supports arbitrarily nested accordions', function (): void {
         $xpath = renderMenu([resolved('Services', ['children' => [
             resolved('Development', ['depth' => 2, 'children' => [
-                resolved('Laravel', ['depth' => 3]),
                 resolved('Mobile', ['depth' => 3, 'children' => [resolved('iOS', ['depth' => 4]), resolved('Android', ['depth' => 4])]]),
             ]]),
-            resolved('Design', ['depth' => 2]),
-        ]])]);
+        ]])], 'variant="tree"');
 
-        expect($xpath->query('//li[contains(@class, "mb-has-children")]')->length)->toBe(3)
-            ->and($xpath->query('//*[@data-mb-toggle]')->length)->toBe(3)
-            ->and($xpath->query('//ul[@data-level="4"]/li')->length)->toBe(2)
-            ->and(one($xpath, '//ul[@data-level="4"]/li[1]//a')->getAttribute('href'))->toBe('/ios');
-    });
-
-    it('treats empty children as a leaf', function (): void {
-        $xpath = renderMenu([resolved('Home', ['children' => []])]);
-
-        expect($xpath->query('//*[@data-mb-toggle]')->length)->toBe(0);
+        expect($xpath->query('//*[@data-mb-toggle]')->length)->toBe(3)
+            ->and($xpath->query('//ul[@data-level="4"]/li')->length)->toBe(2);
     });
 
     it('marks the active trail and opens it in tree menus', function (): void {
         $items = [resolved('Services', ['isActiveTrail' => true, 'children' => [resolved('Design', ['depth' => 2, 'isCurrent' => true])]])];
 
-        $tree = one(renderMenu($items, 'variant="tree"'), '//li[contains(@class, "mb-active-trail")]');
+        $tree = renderMenu($items, 'variant="tree"');
         $dropdown = one(renderMenu($items), '//li[contains(@class, "mb-active-trail")]');
 
-        expect($tree->hasAttribute('data-open'))->toBeTrue()
+        expect(one($tree, '//li[contains(@class, "mb-active-trail")]')->hasAttribute('data-open'))->toBeTrue()
+            ->and(one($tree, '//button[@data-mb-toggle]')->getAttribute('aria-expanded'))->toBe('true')
             ->and($dropdown->hasAttribute('data-open'))->toBeFalse();
     });
 
@@ -285,6 +382,7 @@ describe('tree', function (): void {
         expect($nav->getAttribute('class'))->toContain('mb-menu--columns')->toContain('mb-menu--footer')
             ->and($nav->getAttribute('data-mb-menu'))->toBe('columns')
             ->and($xpath->query('//*[@data-mb-toggle]')->length)->toBe(0)
+            ->and($xpath->query('//*[contains(@class, "fi-dropdown")]')->length)->toBe(0)
             ->and($xpath->query('//ul[contains(@class, "mb-submenu")]')->length)->toBe(2);
     });
 
@@ -297,14 +395,30 @@ describe('tree', function (): void {
             ->and(one(render('<x-menu-builder::sidebar :items="$items" />', compact('items')), '//nav')->getAttribute('data-mb-menu'))->toBe('tree');
     });
 
+    it('passes the direction through the wrappers', function (): void {
+        $items = [resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+            resolved('Web', ['depth' => 2, 'url' => null, 'renderAs' => RenderAs::Heading, 'children' => [resolved('Laravel', ['depth' => 3])]]),
+        ]])];
+
+        $xpath = render('<x-menu-builder::header :items="$items" direction="rtl" />', compact('items'));
+
+        expect(one($xpath, '//nav')->hasAttribute('direction'))->toBeFalse()
+            ->and($xpath->query('//div[@x-float.placement.left-start.flip.shift.offset]')->length)->toBe(1);
+    });
+
     it('renders items through a custom component', function (): void {
         view()->addNamespace('app', __DIR__.'/../Fixtures/views');
 
-        $xpath = renderMenu([resolved('Home'), resolved('Services', ['children' => [resolved('Design', ['depth' => 2])]])], 'item-component="app::menu-item"');
+        $items = [resolved('Home'), resolved('Services', ['children' => [resolved('Design', ['depth' => 2])]])];
 
-        expect($xpath->query('//em[@class="custom-item"]')->length)->toBe(3)
-            ->and(one($xpath, '//em[@data-level="2"]')->textContent)->toBe('Design')
-            ->and($xpath->query('//*[@data-mb-toggle]')->length)->toBe(1);
+        $tree = renderMenu($items, 'variant="tree" item-component="app::menu-item"');
+        $dropdown = renderMenu($items, 'item-component="app::menu-item"');
+
+        expect($tree->query('//em[@class="custom-item"]')->length)->toBe(3)
+            ->and(one($tree, '//em[@data-level="2"]')->textContent)->toBe('Design')
+            ->and($tree->query('//*[@data-mb-toggle]')->length)->toBe(1)
+            ->and($dropdown->query('//em[@class="custom-item"]')->length)->toBe(3)
+            ->and(one($dropdown, '//div[contains(@class, "fi-dropdown-panel")]//em')->textContent)->toBe('Design');
     });
 
     it('prints the frontend assets once', function (): void {
@@ -354,20 +468,8 @@ describe('filament buttons', function (): void {
         ])]), '//a[contains(@class, "fi-btn")]');
 
         expect($link->getAttribute('href'))->toBe('/register')
-            ->and($link->getAttribute('target'))->toBe('_blank');
-    });
-
-    it('escapes attribute values exactly once', function (): void {
-        $html = Blade::render('<x-menu-builder::menu :items="$items" />', ['items' => [resolved('X', [
-            'type' => 'button',
-            'url' => null,
-            'renderAs' => RenderAs::Button,
-            'attributes' => ['title' => '"><b>x & y'],
-        ])]]);
-
-        expect($html)->toContain('title="&quot;&gt;&lt;b&gt;x &amp; y"')
-            ->not->toContain('&amp;quot;')
-            ->not->toContain('<b>x');
+            ->and($link->getAttribute('target'))->toBe('_blank')
+            ->and($link->getAttribute('rel'))->toBe('noopener noreferrer');
     });
 
     it('renders the badge on the button', function (BadgePosition $position, string $query): void {
@@ -381,26 +483,39 @@ describe('filament buttons', function (): void {
 
         expect(trim(one($xpath, $query)->textContent))->toBe('3');
     })->with([
-        'top uses the Filament badge' => [BadgePosition::Top, '//button//*[contains(@class, "fi-badge")]'],
-        'start' => [BadgePosition::Start, '//button/span[contains(@class, "mb-badge--start")]'],
-        'end' => [BadgePosition::End, '//button/span[contains(@class, "mb-badge--end")]'],
+        'top uses the Filament badge' => [BadgePosition::Top, '//button//*[contains(@class, "fi-btn-badge-ctn")]'],
+        'start' => [BadgePosition::Start, '//button//span[contains(@class, "mb-badge--start")]'],
+        'end' => [BadgePosition::End, '//button//span[contains(@class, "mb-badge--end")]'],
     ]);
 });
 
 describe('badges', function (): void {
-    it('renders badges at the start, end or top', function (BadgePosition $position, string $query): void {
+    it('renders inline badges with the Filament badge component', function (BadgePosition $position, string $query): void {
         $xpath = renderMenu([resolved('Services', ['badge' => 'NEW', 'badgeColor' => 'success', 'badgePosition' => $position])]);
 
         $badge = one($xpath, $query);
 
-        expect($badge->getAttribute('class'))->toContain('mb-badge--'.$position->value)
-            ->and($badge->getAttribute('data-color'))->toBe('success')
+        expect($badge->getAttribute('class'))->toContain('fi-badge')->toContain('fi-color-success')->toContain('mb-badge--'.$position->value)
             ->and(trim($badge->textContent))->toBe('NEW');
     })->with([
-        'start (before the label)' => [BadgePosition::Start, '//a/span[contains(@class, "mb-badge")][following-sibling::span[@class="mb-label"]]'],
-        'end (after the label)' => [BadgePosition::End, '//a/span[contains(@class, "mb-badge")][preceding-sibling::span[@class="mb-label"]]'],
-        'top (inside the label)' => [BadgePosition::Top, '//a/span[@class="mb-label"]/span[contains(@class, "mb-badge")]'],
+        'start (before the label)' => [BadgePosition::Start, '//a//span[contains(@class, "mb-badge")][following-sibling::span[@class="mb-label"]]'],
+        'end (after the label)' => [BadgePosition::End, '//a//span[contains(@class, "mb-badge")][preceding-sibling::span[@class="mb-label"]]'],
     ]);
+
+    it('renders top badges with the Filament link badge', function (): void {
+        $badge = one(renderMenu([resolved('Services', ['badge' => 'NEW', 'badgeColor' => 'success', 'badgePosition' => BadgePosition::Top])]), '//a/div[contains(@class, "fi-link-badge-ctn")]/span');
+
+        expect($badge->getAttribute('class'))->toContain('fi-badge')->toContain('fi-color-success')
+            ->and(trim($badge->textContent))->toBe('NEW');
+    });
+
+    it('renders badges of dropdown entries with the list item badge', function (): void {
+        $xpath = renderMenu([resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+            resolved('Careers', ['depth' => 2, 'badge' => '3', 'badgePosition' => BadgePosition::End]),
+        ]])]);
+
+        expect(trim(one($xpath, '//a[contains(@class, "fi-dropdown-list-item")]/span[contains(@class, "fi-badge")]')->textContent))->toBe('3');
+    });
 
     it('uses logical positions so the same markup works in LTR and RTL', function (string $direction): void {
         $html = Blade::render('<div dir="'.$direction.'"><x-menu-builder::menu :items="$items" /></div>', ['items' => [
@@ -409,12 +524,12 @@ describe('badges', function (): void {
 
         expect($html)->toContain('mb-badge--start')
             ->and(Syriable\Filament\Plugins\MenuBuilder\Support\FrontendAssets::css())
-            ->toContain('inset-inline-end')
+            ->toContain('padding-inline-start')
             ->not->toMatch('/(?<![-\w])(left|right)\s*:/');
     })->with(['ltr', 'rtl']);
 
     it('renders no badge when none is set', function (): void {
-        expect(renderMenu([resolved('Home')])->query('//*[contains(@class, "mb-badge")]')->length)->toBe(0);
+        expect(renderMenu([resolved('Home')])->query('//*[contains(@class, "fi-badge")]')->length)->toBe(0);
     });
 });
 
@@ -432,9 +547,12 @@ describe('with the menu builder', function (): void {
 
         $xpath = renderMenu(Menu::build('header'));
 
-        expect(one($xpath, '//a[@href="/services"]')->getAttribute('class'))->toContain('nav-services')
-            ->and(one($xpath, '//a[@href="/services"]/span[@class="mb-label"]/span[contains(@class, "mb-badge--top")]')->textContent)->toBe('New')
+        $trigger = one($xpath, '//button[contains(@class, "nav-services")]');
+
+        expect($trigger->getAttribute('class'))->toContain('mb-trigger')
+            ->and(trim(one($xpath, '//button[contains(@class, "nav-services")]/div[contains(@class, "fi-link-badge-ctn")]')->textContent))->toBe('New')
+            ->and($xpath->query('//a[contains(@class, "mb-parent-link")]/@href')->item(0)?->nodeValue)->toBe('/services')
             ->and(one($xpath, '//button[@data-modal="login"]')->getAttribute('type'))->toBe('button')
-            ->and(one($xpath, '//ul[@data-level="3"]//a')->getAttribute('href'))->toBe('/laravel');
+            ->and(one($xpath, '//div[@data-level="2"]//a[@href="/laravel"]')->getAttribute('class'))->toContain('fi-dropdown-list-item');
     });
 });

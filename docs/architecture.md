@@ -159,21 +159,24 @@ Presentation options shared by every type are **keys inside the existing `data` 
 
 ## Frontend rendering
 
-Four anonymous components make up one renderer:
+The renderer is a thin layer of anonymous components over Filament's UI components (`link`, `button`, `badge`, `dropdown`, `dropdown.list.item`, `dropdown.header`, `icon-button`, `icon`):
 
 | Component | Responsibility |
 | --- | --- |
-| `menu` | `<nav>`, variant (`dropdown`, `tree` or `columns`), assets |
-| `items` | one level: the `<li>` wrapper (plus wrapper attributes), the toggle button and the recursion into children |
-| `item` | the item's root element (`<a>`, `<x-filament::button>` or heading), icon, label and badges (the main override point) |
-| `badge` | the badge markup |
+| `menu` | `<nav>`, variant (`dropdown`, `tree` or `columns`), direction, assets |
+| `items` | one level: the `<li>` wrapper (plus wrapper attributes); per variant, a dropdown, an accordion row with an icon-button toggle, or a plain row; recursion into children |
+| `item` | the item's root element: `<x-filament::link>` (links and headings) or `<x-filament::button>`; with `trigger` it becomes a `<button>` with a chevron (the main override point) |
+| `dropdown` | an item with children as `<x-filament::dropdown>`; placement from level and direction; the parent's own page as first entry |
+| `dropdown-item` | one panel entry: nested dropdown, dropdown header, Filament button, custom item component or dropdown list item |
+| `badge` | inline badges via `<x-filament::badge>` |
 
 `header`, `footer` and `sidebar` are one-line wrappers that pass a variant to `menu`. There is no placement-specific rendering logic. Dropdowns are derived from `hasChildren()` alone, at any depth.
 
-Behavior is split so that each part stays small:
-
-- **CSS** (`resources/dist/frontend/menu.css`) positions everything with logical properties, inside `:where()` (zero specificity) and in the `base` cascade layer. Otherwise, as unlayered CSS, its resets would beat Filament's `.fi-btn` styles and the host's Tailwind utilities, which live in the `components` and `utilities` layers. Submenus are an accordion by default (`[data-open]`). Above 48rem, the `dropdown` variant absolutely positions them: first level below the parent, deeper levels at `inset-inline-start: 100%`. The `.mb-flip` class mirrors them to the inline start.
-- **JS** (`resources/dist/frontend/menu.js`, no dependencies) handles only the toggle buttons (`data-open` and `aria-expanded`), `Escape`, click-outside, and the flip check. On hover, focus or open it measures the submenu against the viewport using the element's computed direction.
+- **Why Filament components.** They bring consistent colors, sizes, dark mode and theming, plus a tested dropdown (Alpine + Floating UI with flip and shift), so the package no longer needs its own positioning and flip logic. The cost is that a frontend must load Filament's CSS and scripts (documented in the README).
+- **Icons.** Filament components throw for unknown icons. `Support\Icons::safe()` checks the icon once per request and drops unknown ones, so a menu never breaks the page.
+- **Attributes.** Item attributes reach Filament components through `:attributes="$item->itemAttributes()"`. That bag is already escaped and Filament prints it verbatim, so values are escaped exactly once.
+- **CSS** (`resources/dist/frontend/menu.css`) only does layout (row, accordion, columns), with logical properties, inside `:where()` and in the `base` cascade layer so Filament component styles and Tailwind utilities win.
+- **JS** (`resources/dist/frontend/menu.js`, no dependencies) only handles the accordion toggles (`data-open`, `aria-expanded`) and `Escape`. Dropdown behavior is Filament's.
 - Both files are printed inline once per page (`@once`, with the Vite CSP nonce when set) and can be switched off with `menu-builder.frontend.assets`.
 
 ## Authorization
