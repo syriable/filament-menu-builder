@@ -64,6 +64,16 @@ class ButtonType extends MenuItemType
     protected function buttonSchema(): array
     {
         return [
+            TextInput::make('url')
+                ->label(__('menu-builder::menu-builder.fields.button_url'))
+                ->helperText(__('menu-builder::menu-builder.fields.button_url_help'))
+                ->maxLength(2048)
+                ->live(onBlur: true)
+                ->columnSpanFull(),
+            Toggle::make('new_tab')
+                ->label(__('menu-builder::menu-builder.fields.new_tab'))
+                ->visible(static fn (Get $get): bool => filled($get('url')))
+                ->columnSpanFull(),
             ToggleButtons::make('size')
                 ->label(__('menu-builder::menu-builder.fields.button_size'))
                 ->options([
@@ -87,14 +97,6 @@ class ButtonType extends MenuItemType
                 ->grouped(),
             Toggle::make('outlined')
                 ->label(__('menu-builder::menu-builder.fields.outlined')),
-            TextInput::make('url')
-                ->label(__('menu-builder::menu-builder.fields.button_url'))
-                ->helperText(__('menu-builder::menu-builder.fields.button_url_help'))
-                ->maxLength(2048)
-                ->live(onBlur: true),
-            Toggle::make('new_tab')
-                ->label(__('menu-builder::menu-builder.fields.new_tab'))
-                ->visible(static fn (Get $get): bool => filled($get('url'))),
         ];
     }
 }

@@ -7,6 +7,7 @@ namespace Syriable\Filament\Plugins\MenuBuilder;
 use BackedEnum;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Syriable\Filament\Plugins\MenuBuilder\Filament\Pages\ManageMenu;
 use Syriable\Filament\Plugins\MenuBuilder\Filament\Pages\MenuPlacements;
@@ -30,10 +31,12 @@ class MenuBuilderPlugin implements Plugin
 
     protected ?int $navigationSort = null;
 
-    /** @var array<string, string> */
-    protected array $locales = [];
+    /** @var array<int|string, string>|null */
+    protected ?array $locales = null;
 
-    protected bool $slideOver = true;
+    protected ?bool $slideOver = null;
+
+    protected Width|string|null $modalWidth = null;
 
     public static function make(): static
     {
@@ -98,31 +101,35 @@ class MenuBuilderPlugin implements Plugin
 
     /**
      * Locales the item labels can be translated into, e.g. ['en', 'ar'] or
-     * ['en' => 'English', 'ar' => 'العربية']. The item form then shows one
-     * label field per locale; the frontend uses the one of the current locale
-     * and falls back to the default label.
+     * ['en' => 'English', 'ar' => 'العربية']. Overrides `menu-builder.locales`.
      *
-     * @param  array<int|string, string>  $locales
+     * @param  array<int|string, string>|null  $locales
      */
-    public function locales(array $locales): static
+    public function locales(?array $locales): static
     {
-        $this->locales = [];
-
-        foreach ($locales as $locale => $label) {
-            is_int($locale)
-                ? $this->locales[$label] = $label
-                : $this->locales[$locale] = $label;
-        }
+        $this->locales = $locales;
 
         return $this;
     }
 
     /**
-     * Whether the item form opens in a slide-over (default) or a modal.
+     * Whether the item form opens in a slide-over or a centered modal.
+     * Overrides `menu-builder.item_form.slide_over`.
      */
-    public function slideOver(bool $condition = true): static
+    public function slideOver(?bool $condition = true): static
     {
         $this->slideOver = $condition;
+
+        return $this;
+    }
+
+    /**
+     * Width of the item form, e.g. Width::ThreeExtraLarge or '3xl'.
+     * Overrides `menu-builder.item_form.width`.
+     */
+    public function modalWidth(Width|string|null $width): static
+    {
+        $this->modalWidth = $width;
 
         return $this;
     }
@@ -132,12 +139,34 @@ class MenuBuilderPlugin implements Plugin
      */
     public function getLocales(): array
     {
-        return $this->locales;
+        $locales = $this->locales ?? config('menu-builder.locales', []);
+        $normalized = [];
+
+        foreach (is_array($locales) ? $locales : [] as $locale => $label) {
+            if (! is_string($label) || $label === '') {
+                continue;
+            }
+
+            is_int($locale) ? $normalized[$label] = $label : $normalized[$locale] = $label;
+        }
+
+        return $normalized;
     }
 
     public function hasSlideOver(): bool
     {
-        return $this->slideOver;
+        return $this->slideOver ?? (bool) config('menu-builder.item_form.slide_over', true);
+    }
+
+    public function getModalWidth(): Width
+    {
+        $width = $this->modalWidth ?? config('menu-builder.item_form.width');
+
+        if ($width instanceof Width) {
+            return $width;
+        }
+
+        return (is_string($width) ? Width::tryFrom($width) : null) ?? Width::TwoExtraLarge;
     }
 
     public function shouldRegisterNavigation(): bool

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Syriable\Filament\Plugins\MenuBuilder\Filament\Pages;
 
 use Filament\Actions\Action;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -35,6 +36,7 @@ use Syriable\Filament\Plugins\MenuBuilder\MenuItemType;
 use Syriable\Filament\Plugins\MenuBuilder\MenuPlacement;
 use Syriable\Filament\Plugins\MenuBuilder\MenuVisibility;
 use Syriable\Filament\Plugins\MenuBuilder\Support\MenuAuthorizer;
+use Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle;
 use Syriable\Filament\Plugins\MenuBuilder\Tree\DropPosition;
 use Syriable\Filament\Plugins\MenuBuilder\Tree\MenuEditor;
 use Syriable\Filament\Plugins\MenuBuilder\Tree\MenuNode;
@@ -166,7 +168,8 @@ class ManageMenu extends Page
                 ? __('menu-builder::menu-builder.actions.create_child_heading', ['parent' => $this->nodeLabel((string) $arguments['parent'])])
                 : __('menu-builder::menu-builder.actions.create_heading'))
             ->modalSubmitActionLabel(__('menu-builder::menu-builder.actions.add'))
-            ->slideOver(static::plugin()?->hasSlideOver() ?? true)
+            ->slideOver(static::settings()->hasSlideOver())
+            ->modalWidth(static::settings()->getModalWidth())
             ->authorize(fn (): bool => $this->can(MenuAuthorizer::CREATE))
             ->visible(fn (array $arguments): bool => $this->allowedTypes($this->parentKey($arguments)) !== [])
             ->fillForm(fn (array $arguments): array => [
@@ -200,10 +203,11 @@ class ManageMenu extends Page
                 'item' => $this->nodeLabel((string) ($arguments['key'] ?? '')),
             ]))
             ->modalSubmitActionLabel(__('menu-builder::menu-builder.actions.apply'))
-            ->slideOver(static::plugin()?->hasSlideOver() ?? true)
+            ->slideOver(static::settings()->hasSlideOver())
+            ->modalWidth(static::settings()->getModalWidth())
             ->authorize(fn (): bool => $this->can(MenuAuthorizer::UPDATE))
             ->fillForm(fn (array $arguments): array => $this->node($arguments)->attributes())
-            ->schema(fn (array $arguments): array => $this->itemFormSchema($this->node($arguments)->type))
+            ->schema(fn (array $arguments): array => $this->itemFormSchema($this->node($arguments)->type, $this->node($arguments)))
             ->action(function (array $data, array $arguments, Action $action): void {
                 $draft = $this->draft();
 
@@ -379,11 +383,18 @@ class ManageMenu extends Page
     /**
      * @return array<Component>
      */
-    protected function itemFormSchema(string $type): array
+    /**
+     * The item form: the essentials first (label, the fields of the type,
+     * visibility), then collapsible sections for translations, appearance,
+     * text and HTML attributes. Sections without values start collapsed.
+     *
+     * @return array<Component>
+     */
+    protected function itemFormSchema(string $type, ?MenuNode $node = null): array
     {
         $registry = static::registry();
         $definition = $registry->itemType($type);
-        $colors = $this->colorOptions();
+        $data = $node === null ? [] : $node->data;
 
         return [
             TextInput::make('label')
@@ -391,55 +402,9 @@ class ManageMenu extends Page
                 ->required(! $definition->resolvesLabel())
                 ->helperText($definition->resolvesLabel() ? $this->translate('fields.label_optional') : null)
                 ->maxLength(255),
-            ...$this->labelTranslationFields(),
-            Group::make($definition->getFormSchema())
+            Grid::make(2)
+                ->schema($definition->getFormSchema())
                 ->statePath('data'),
-            Section::make(__('menu-builder::menu-builder.fields.appearance'))
-                ->schema([
-                    TextInput::make('icon')
-                        ->label(__('menu-builder::menu-builder.fields.icon'))
-                        ->placeholder('heroicon-o-home')
-                        ->maxLength(100),
-                    Select::make('color')
-                        ->label(__('menu-builder::menu-builder.fields.color'))
-                        ->options($colors),
-                    TextInput::make('badge')
-                        ->label(__('menu-builder::menu-builder.fields.badge'))
-                        ->maxLength(50),
-                    Select::make('badge_color')
-                        ->label(__('menu-builder::menu-builder.fields.badge_color'))
-                        ->options($colors),
-                    Group::make([
-                        ToggleButtons::make(MenuNode::DATA_BADGE_POSITION)
-                            ->label(__('menu-builder::menu-builder.fields.badge_position'))
-                            ->options($this->enumOptions(BadgePosition::cases()))
-                            ->default(BadgePosition::End->value)
-                            ->inline()
-                            ->grouped(),
-                    ])->statePath('data'),
-                ])
-                ->columns(2)
-                ->collapsible()
-                ->compact(),
-            Section::make(__('menu-builder::menu-builder.fields.attributes'))
-                ->description(__('menu-builder::menu-builder.fields.attributes_help'))
-                ->schema([
-                    KeyValue::make(MenuNode::DATA_ATTRIBUTES)
-                        ->hiddenLabel()
-                        ->keyLabel(__('menu-builder::menu-builder.fields.attribute'))
-                        ->valueLabel(__('menu-builder::menu-builder.fields.value'))
-                        ->keyPlaceholder('data-modal')
-                        ->valuePlaceholder('login')
-                        ->addActionLabel(__('menu-builder::menu-builder.fields.add_attribute')),
-                    Select::make(MenuNode::DATA_ATTRIBUTE_TARGET)
-                        ->label(__('menu-builder::menu-builder.fields.attribute_target'))
-                        ->options($this->enumOptions(AttributeTarget::cases()))
-                        ->default(AttributeTarget::Item->value)
-                        ->selectablePlaceholder(false),
-                ])
-                ->statePath('data')
-                ->collapsible()
-                ->compact(),
             Grid::make(2)->schema([
                 Select::make('visibility')
                     ->label(__('menu-builder::menu-builder.fields.visibility'))
@@ -452,17 +417,22 @@ class ManageMenu extends Page
                     ->default(true)
                     ->inline(false),
             ]),
+            ...$this->labelTranslationSection($data),
+            $this->appearanceSection($node),
+            $this->textStyleSection($data),
+            $this->attributesSection($data),
         ];
     }
 
     /**
      * One label field per configured locale, stored in `data.label_translations`.
      *
+     * @param  array<string, mixed>  $data
      * @return array<Component>
      */
-    protected function labelTranslationFields(): array
+    protected function labelTranslationSection(array $data): array
     {
-        $locales = static::plugin()?->getLocales() ?? [];
+        $locales = static::settings()->getLocales();
 
         if ($locales === []) {
             return [];
@@ -479,12 +449,134 @@ class ManageMenu extends Page
         return [
             Section::make(__('menu-builder::menu-builder.fields.label_translations'))
                 ->description(__('menu-builder::menu-builder.fields.label_translations_help'))
+                ->icon(Heroicon::OutlinedLanguage)
                 ->schema($fields)
                 ->statePath('data.'.MenuNode::DATA_LABEL_TRANSLATIONS)
                 ->columns(2)
                 ->collapsible()
+                ->collapsed(! $this->hasValues($data[MenuNode::DATA_LABEL_TRANSLATIONS] ?? null))
                 ->compact(),
         ];
+    }
+
+    protected function appearanceSection(?MenuNode $node): Section
+    {
+        $colors = $this->colorOptions();
+        $filled = $node !== null && ($node->icon !== null || $node->color !== null || $node->badge !== null);
+
+        return Section::make(__('menu-builder::menu-builder.fields.appearance'))
+            ->description(__('menu-builder::menu-builder.fields.appearance_help'))
+            ->icon(Heroicon::OutlinedSwatch)
+            ->schema([
+                TextInput::make('icon')
+                    ->label(__('menu-builder::menu-builder.fields.icon'))
+                    ->placeholder('heroicon-o-home')
+                    ->maxLength(100),
+                Select::make('color')
+                    ->label(__('menu-builder::menu-builder.fields.color'))
+                    ->placeholder(__('menu-builder::menu-builder.fields.default'))
+                    ->options($colors),
+                TextInput::make('badge')
+                    ->label(__('menu-builder::menu-builder.fields.badge'))
+                    ->maxLength(50),
+                Select::make('badge_color')
+                    ->label(__('menu-builder::menu-builder.fields.badge_color'))
+                    ->placeholder(__('menu-builder::menu-builder.fields.default'))
+                    ->options($colors),
+                Group::make([
+                    ToggleButtons::make(MenuNode::DATA_BADGE_POSITION)
+                        ->label(__('menu-builder::menu-builder.fields.badge_position'))
+                        ->options($this->enumOptions(BadgePosition::cases()))
+                        ->default(BadgePosition::End->value)
+                        ->inline()
+                        ->grouped(),
+                ])->statePath('data')->columnSpanFull(),
+            ])
+            ->columns(2)
+            ->collapsible()
+            ->collapsed(! $filled)
+            ->compact();
+    }
+
+    /**
+     * Text options, stored in `data.text_style` (see TextStyle).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected function textStyleSection(array $data): Section
+    {
+        $options = static fn (array $values, string $group): array => collect($values)
+            ->mapWithKeys(static fn (string $value): array => [$value => __("menu-builder::menu-builder.text.{$group}.{$value}")])
+            ->all();
+
+        return Section::make(__('menu-builder::menu-builder.fields.text_style'))
+            ->description(__('menu-builder::menu-builder.fields.text_style_help'))
+            ->icon(Heroicon::OutlinedBold)
+            ->schema([
+                Select::make('weight')
+                    ->label(__('menu-builder::menu-builder.fields.font_weight'))
+                    ->placeholder(__('menu-builder::menu-builder.fields.default'))
+                    ->options($options(['light', 'normal', 'medium', 'semibold', 'bold', 'extrabold'], 'weights')),
+                Select::make('size')
+                    ->label(__('menu-builder::menu-builder.fields.text_size'))
+                    ->placeholder(__('menu-builder::menu-builder.fields.default'))
+                    ->options($options(TextStyle::SIZES, 'sizes')),
+                Select::make('underline')
+                    ->label(__('menu-builder::menu-builder.fields.underline'))
+                    ->placeholder(__('menu-builder::menu-builder.fields.default'))
+                    ->options($options(TextStyle::UNDERLINES, 'underlines')),
+                Select::make('transform')
+                    ->label(__('menu-builder::menu-builder.fields.text_transform'))
+                    ->placeholder(__('menu-builder::menu-builder.fields.default'))
+                    ->options($options(TextStyle::TRANSFORMS, 'transforms')),
+                Select::make('cursor')
+                    ->label(__('menu-builder::menu-builder.fields.cursor'))
+                    ->placeholder(__('menu-builder::menu-builder.fields.default'))
+                    ->options($options(TextStyle::CURSORS, 'cursors')),
+                ColorPicker::make('hover_color')
+                    ->label(__('menu-builder::menu-builder.fields.hover_color'))
+                    ->helperText(__('menu-builder::menu-builder.fields.hover_color_help')),
+                Toggle::make('italic')
+                    ->label(__('menu-builder::menu-builder.fields.italic')),
+            ])
+            ->statePath('data.'.MenuNode::DATA_TEXT_STYLE)
+            ->columns(2)
+            ->collapsible()
+            ->collapsed(! $this->hasValues($data[MenuNode::DATA_TEXT_STYLE] ?? null))
+            ->compact();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function attributesSection(array $data): Section
+    {
+        return Section::make(__('menu-builder::menu-builder.fields.attributes'))
+            ->description(__('menu-builder::menu-builder.fields.attributes_help'))
+            ->icon(Heroicon::OutlinedCodeBracket)
+            ->schema([
+                KeyValue::make(MenuNode::DATA_ATTRIBUTES)
+                    ->hiddenLabel()
+                    ->keyLabel(__('menu-builder::menu-builder.fields.attribute'))
+                    ->valueLabel(__('menu-builder::menu-builder.fields.value'))
+                    ->keyPlaceholder('data-modal')
+                    ->valuePlaceholder('login')
+                    ->addActionLabel(__('menu-builder::menu-builder.fields.add_attribute')),
+                Select::make(MenuNode::DATA_ATTRIBUTE_TARGET)
+                    ->label(__('menu-builder::menu-builder.fields.attribute_target'))
+                    ->options($this->enumOptions(AttributeTarget::cases()))
+                    ->default(AttributeTarget::Item->value)
+                    ->selectablePlaceholder(false),
+            ])
+            ->statePath('data')
+            ->collapsible()
+            ->collapsed(! $this->hasValues($data[MenuNode::DATA_ATTRIBUTES] ?? null))
+            ->compact();
+    }
+
+    protected function hasValues(mixed $value): bool
+    {
+        return is_array($value) && array_filter($value, static fn (mixed $item): bool => filled($item) && $item !== false) !== [];
     }
 
     /**

@@ -487,6 +487,67 @@ describe('colors and classes', function (): void {
     });
 });
 
+describe('text style', function (): void {
+    it('adds the text options to every kind of item element', function (): void {
+        $style = Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle::fromArray(['weight' => 'bold', 'underline' => 'none', 'hover_color' => '#f59e0b']);
+
+        $xpath = renderMenu([
+            resolved('About', ['textStyle' => $style]),
+            resolved('Login', ['type' => 'button', 'url' => null, 'renderAs' => RenderAs::Button, 'textStyle' => $style]),
+            resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'textStyle' => $style, 'children' => [
+                resolved('Web', ['depth' => 2, 'textStyle' => $style]),
+                resolved('Group', ['depth' => 2, 'url' => null, 'renderAs' => RenderAs::Heading, 'textStyle' => $style]),
+            ]]),
+        ]);
+
+        $elements = $xpath->query('//*[contains(@class, "mb-weight-bold")]');
+
+        expect($elements->length)->toBe(5);
+
+        foreach ($elements as $element) {
+            expect($element->getAttribute('class'))->toContain('mb-underline-none')->toContain('mb-hover-color')
+                ->and($element->getAttribute('style'))->toContain('--mb-item-hover-color: #f59e0b');
+        }
+    });
+
+    it('keeps the text options on the item when attributes target the wrapper', function (): void {
+        $xpath = renderMenu([resolved('About', [
+            'attributes' => ['data-x' => 'y'],
+            'attributeTarget' => AttributeTarget::Wrapper,
+            'textStyle' => Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle::fromArray(['italic' => true]),
+        ])]);
+
+        expect(one($xpath, '//a')->getAttribute('class'))->toContain('mb-italic')
+            ->and(one($xpath, '//li')->getAttribute('class'))->not->toContain('mb-italic');
+    });
+
+    it('merges the hover color with a style attribute', function (): void {
+        $link = one(renderMenu([resolved('About', [
+            'attributes' => ['style' => 'letter-spacing: 1px'],
+            'textStyle' => Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle::fromArray(['hover_color' => 'rgb(1 2 3)']),
+        ])]), '//a');
+
+        expect($link->getAttribute('style'))->toContain('letter-spacing: 1px')->toContain('--mb-item-hover-color: rgb(1 2 3)');
+    });
+
+    it('ships a rule for every text option', function (): void {
+        $css = Syriable\Filament\Plugins\MenuBuilder\Support\FrontendAssets::css();
+        $classes = [
+            ...array_map(fn (Filament\Support\Enums\FontWeight $weight): string => 'mb-weight-'.$weight->value, Filament\Support\Enums\FontWeight::cases()),
+            ...array_map(fn (string $size): string => 'mb-text-'.$size, Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle::SIZES),
+            ...array_map(fn (string $value): string => 'mb-underline-'.$value, ['always', 'none']),
+            ...array_map(fn (string $value): string => 'mb-transform-'.$value, Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle::TRANSFORMS),
+            ...array_map(fn (string $value): string => 'mb-cursor-'.$value, Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle::CURSORS),
+            'mb-italic',
+            'mb-hover-color',
+        ];
+
+        foreach ($classes as $class) {
+            expect($css)->toContain('.'.$class);
+        }
+    });
+});
+
 describe('filament buttons', function (): void {
     it('renders button items with the Filament button component', function (): void {
         $button = one(renderMenu([resolved('Login', [

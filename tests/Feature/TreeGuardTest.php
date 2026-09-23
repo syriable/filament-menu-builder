@@ -186,3 +186,25 @@ it('validates label translations', function (): void {
     expect(($this->messages)($tree))->toContain('"not a locale" is not a valid locale.')
         ->and($fields)->toBe(['data.label_translations', 'data.label_translations.ar', 'data.label_translations.ar']);
 });
+
+it('validates the text style', function (): void {
+    $tree = MenuTree::fromNestedArray('header', [
+        linkItem('Valid', '/', ['data' => ['link_type' => 'url', 'url' => '/', 'text_style' => [
+            'weight' => 'bold', 'size' => 'lg', 'italic' => true, 'underline' => 'none', 'transform' => 'uppercase', 'cursor' => 'pointer', 'hover_color' => '#f59e0b',
+        ]]]),
+        linkItem('Invalid', '/', ['data' => ['link_type' => 'url', 'url' => '/', 'text_style' => [
+            'weight' => 'heavy', 'size' => '9xl', 'underline' => 'wavy', 'transform' => 'reverse', 'cursor' => 'grab', 'hover_color' => 'red;}',
+        ]]]),
+    ]);
+
+    $fields = array_map(fn (TreeViolation $violation): string => $violation->field ?? '', $this->guard->validate($tree));
+
+    expect($fields)->toEqualCanonicalizing([
+        'data.text_style.weight',
+        'data.text_style.size',
+        'data.text_style.underline',
+        'data.text_style.transform',
+        'data.text_style.cursor',
+        'data.text_style.hover_color',
+    ]);
+});

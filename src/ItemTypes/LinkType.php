@@ -83,13 +83,15 @@ class LinkType extends MenuItemType
                 ->inline()
                 ->grouped()
                 ->required()
-                ->live(),
+                ->live()
+                ->columnSpanFull(),
             TextInput::make('url')
                 ->label(__('menu-builder::menu-builder.fields.url'))
                 ->placeholder('/about, https://example.com, #pricing, mailto:…')
                 ->required()
                 ->maxLength(2048)
-                ->visible($isUrl),
+                ->visible($isUrl)
+                ->columnSpanFull(),
             Select::make('route')
                 ->label(__('menu-builder::menu-builder.fields.route'))
                 ->options(static fn (): array => app(UrlResolver::class)->selectableRoutes(
@@ -103,12 +105,14 @@ class LinkType extends MenuItemType
 
                     $set('route_parameters', array_fill_keys($names, ''));
                 })
-                ->visible($isRoute),
+                ->visible($isRoute)
+                ->columnSpanFull(),
             KeyValue::make('route_parameters')
                 ->label(__('menu-builder::menu-builder.fields.route_parameters'))
                 ->keyLabel(__('menu-builder::menu-builder.fields.parameter'))
                 ->valueLabel(__('menu-builder::menu-builder.fields.value'))
-                ->visible($isRoute),
+                ->visible($isRoute)
+                ->columnSpanFull(),
             Toggle::make('new_tab')
                 ->label(__('menu-builder::menu-builder.fields.new_tab'))
                 ->visible($isLink),

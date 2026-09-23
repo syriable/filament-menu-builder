@@ -12,6 +12,7 @@ use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Models\MenuItem;
 use Syriable\Filament\Plugins\MenuBuilder\Support\HtmlAttributes;
+use Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle;
 
 /**
  * Immutable attributes of a single menu item.
@@ -43,6 +44,8 @@ final readonly class MenuNode implements Arrayable
     public const string DATA_BADGE_POSITION = 'badge_position';
 
     public const string DATA_LABEL_TRANSLATIONS = 'label_translations';
+
+    public const string DATA_TEXT_STYLE = 'text_style';
 
     /**
      * @param  array<string, mixed>  $data  Type specific data (url, route, record id, ...) and rendering options.
@@ -185,6 +188,11 @@ final readonly class MenuNode implements Arrayable
         }
 
         return null;
+    }
+
+    public function textStyle(): TextStyle
+    {
+        return TextStyle::fromArray($this->data[self::DATA_TEXT_STYLE] ?? null);
     }
 
     public function isNew(): bool

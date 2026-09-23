@@ -4,6 +4,12 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- Configure the item form in `config/menu-builder.php`: `item_form.slide_over` and `item_form.width`. The plugin's `slideOver()` and new `modalWidth()` override them.
+- Translation locales can be set in `config/menu-builder.locales`. `MenuBuilderPlugin::locales()` overrides them.
+- Reorganized item form: essentials first, then collapsible Label translations, Appearance, Text and HTML attributes sections (collapsed when empty), with fields two per row.
+- Text options per item (`data.text_style`): weight, size, italic, underline (always, on hover, never), letter case, cursor and hover color. They are rendered as `mb-*` classes and `--mb-item-hover-color`.
+- Headings no longer underline on hover by default.
+
 - Fix: the editor stylesheet is scoped to `.mb-editor`. Its `.mb-row` and `.mb-label` rules leaked onto frontend menus through `@filamentStyles`, causing a light hover background and near-black labels.
 - Links, headings and dropdown entries now inherit the menu's text color and have no hover background. Items with an explicit color keep it.
 - New `item-class`, `active-class` and `dropdown-class` props, `--mb-color`, `--mb-hover-color`, `--mb-active-color` and `--mb-dropdown-*` custom properties, and an `mb-active` class on active items.
