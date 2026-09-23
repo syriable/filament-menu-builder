@@ -6,6 +6,7 @@ return [
 
     'navigation' => [
         'label' => 'Menus',
+        'menu' => 'Menu',
     ],
 
     'placements' => [
