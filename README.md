@@ -346,6 +346,7 @@ An item with children is automatically a dropdown, and a child with children is 
 
 - The first level opens below its trigger. Deeper levels open to the *inline end*: right in LTR, left in RTL.
 - Dropdowns are Filament's: they open on click or with `Enter`/`Space`, close on click outside or `Escape`, and use Floating UI to flip and shift so a panel never leaves the viewport.
+- The chevron follows the open state: on the first level it turns to point up while the panel is open, and on nested levels it nudges towards its panel (mirrored in RTL). The animation is skipped when the visitor prefers reduced motion.
 - For mobile navigation use the `tree` variant (or `<x-menu-builder::sidebar>`), an accordion toggled with icon buttons.
 
 The package's own assets are tiny: layout CSS and a script for the accordion toggles, printed once per page. Set `menu-builder.frontend.assets` to `false` (or pass `:with-assets="false"`) to ship your own. The inline tags use Laravel's Vite CSP nonce when one is set.

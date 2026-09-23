@@ -4,6 +4,9 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- Fix: hover underlines (the default link underline and the "On hover" and "Always" text options) were never painted, because the label sits in an inline-flex box that the link's text decoration does not reach. Underlines are now drawn on the label.
+- Dropdown chevrons animate with the open state: the first level turns up, nested levels nudge towards their panel. Honors `prefers-reduced-motion`.
+
 - Configure the item form in `config/menu-builder.php`: `item_form.slide_over` and `item_form.width`. The plugin's `slideOver()` and new `modalWidth()` override them.
 - Translation locales can be set in `config/menu-builder.locales`. `MenuBuilderPlugin::locales()` overrides them.
 - Reorganized item form: essentials first, then collapsible Label translations, Appearance, Text and HTML attributes sections (collapsed when empty), with fields two per row.
