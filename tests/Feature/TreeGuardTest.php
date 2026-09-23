@@ -172,3 +172,17 @@ it('throws with all violations', function (): void {
 
     $this->fail('The tree should be invalid.');
 });
+
+it('validates label translations', function (): void {
+    $tree = MenuTree::fromNestedArray('header', [
+        linkItem('Valid', '/', ['data' => ['link_type' => 'url', 'url' => '/', 'label_translations' => ['ar' => 'صالح', 'pt_BR' => 'Válido', 'en' => null]]]),
+        linkItem('Bad locale', '/', ['data' => ['link_type' => 'url', 'url' => '/', 'label_translations' => ['not a locale' => 'x']]]),
+        linkItem('Too long', '/', ['data' => ['link_type' => 'url', 'url' => '/', 'label_translations' => ['ar' => str_repeat('x', 256)]]]),
+        linkItem('Not text', '/', ['data' => ['link_type' => 'url', 'url' => '/', 'label_translations' => ['ar' => ['x']]]]),
+    ]);
+
+    $fields = array_map(fn (TreeViolation $violation): string => $violation->field ?? '', $this->guard->validate($tree));
+
+    expect(($this->messages)($tree))->toContain('"not a locale" is not a valid locale.')
+        ->and($fields)->toBe(['data.label_translations', 'data.label_translations.ar', 'data.label_translations.ar']);
+});

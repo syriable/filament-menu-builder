@@ -166,6 +166,7 @@ class ManageMenu extends Page
                 ? __('menu-builder::menu-builder.actions.create_child_heading', ['parent' => $this->nodeLabel((string) $arguments['parent'])])
                 : __('menu-builder::menu-builder.actions.create_heading'))
             ->modalSubmitActionLabel(__('menu-builder::menu-builder.actions.add'))
+            ->slideOver(static::plugin()?->hasSlideOver() ?? true)
             ->authorize(fn (): bool => $this->can(MenuAuthorizer::CREATE))
             ->visible(fn (array $arguments): bool => $this->allowedTypes($this->parentKey($arguments)) !== [])
             ->fillForm(fn (array $arguments): array => [
@@ -199,6 +200,7 @@ class ManageMenu extends Page
                 'item' => $this->nodeLabel((string) ($arguments['key'] ?? '')),
             ]))
             ->modalSubmitActionLabel(__('menu-builder::menu-builder.actions.apply'))
+            ->slideOver(static::plugin()?->hasSlideOver() ?? true)
             ->authorize(fn (): bool => $this->can(MenuAuthorizer::UPDATE))
             ->fillForm(fn (array $arguments): array => $this->node($arguments)->attributes())
             ->schema(fn (array $arguments): array => $this->itemFormSchema($this->node($arguments)->type))
@@ -389,6 +391,7 @@ class ManageMenu extends Page
                 ->required(! $definition->resolvesLabel())
                 ->helperText($definition->resolvesLabel() ? $this->translate('fields.label_optional') : null)
                 ->maxLength(255),
+            ...$this->labelTranslationFields(),
             Group::make($definition->getFormSchema())
                 ->statePath('data'),
             Section::make(__('menu-builder::menu-builder.fields.appearance'))
@@ -449,6 +452,38 @@ class ManageMenu extends Page
                     ->default(true)
                     ->inline(false),
             ]),
+        ];
+    }
+
+    /**
+     * One label field per configured locale, stored in `data.label_translations`.
+     *
+     * @return array<Component>
+     */
+    protected function labelTranslationFields(): array
+    {
+        $locales = static::plugin()?->getLocales() ?? [];
+
+        if ($locales === []) {
+            return [];
+        }
+
+        $fields = [];
+
+        foreach ($locales as $locale => $label) {
+            $fields[] = TextInput::make($locale)
+                ->label($label)
+                ->maxLength(255);
+        }
+
+        return [
+            Section::make(__('menu-builder::menu-builder.fields.label_translations'))
+                ->description(__('menu-builder::menu-builder.fields.label_translations_help'))
+                ->schema($fields)
+                ->statePath('data.'.MenuNode::DATA_LABEL_TRANSLATIONS)
+                ->columns(2)
+                ->collapsible()
+                ->compact(),
         ];
     }
 

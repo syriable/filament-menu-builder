@@ -251,3 +251,29 @@ it('builds large menus quickly', function (): void {
         ->and($menu->sum(fn (ResolvedMenuItem $item): int => count($item->children)))->toBe(1000)
         ->and(microtime(true) - $start)->toBeLessThan(2.0);
 });
+
+describe('label translations', function (): void {
+    beforeEach(function (): void {
+        Menu::sync('header', [
+            linkItem('Pricing', '/pricing', ['data' => ['link_type' => 'url', 'url' => '/pricing', 'label_translations' => ['ar' => 'الأسعار', 'de' => '']]]),
+            linkItem('About', '/about'),
+        ]);
+    });
+
+    it('uses the label of the current locale', function (): void {
+        app()->setLocale('ar');
+
+        expect(Menu::build('header')->pluck('label')->all())->toBe(['الأسعار', 'About']);
+    });
+
+    it('builds the labels of an explicit locale', function (): void {
+        expect(Menu::build('header', locale: 'ar')->pluck('label')->all())->toBe(['الأسعار', 'About'])
+            ->and(Menu::build('header', locale: 'en')->pluck('label')->all())->toBe(['Pricing', 'About']);
+    });
+
+    it('falls back to the language and then to the default label', function (): void {
+        expect(Menu::build('header', locale: 'ar_SA')->first()->label)->toBe('الأسعار')
+            ->and(Menu::build('header', locale: 'de')->first()->label)->toBe('Pricing')
+            ->and(Menu::build('header', locale: 'fr')->first()->label)->toBe('Pricing');
+    });
+});

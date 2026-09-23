@@ -7,6 +7,7 @@ namespace Syriable\Filament\Plugins\MenuBuilder;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Contracts\Routing\UrlGenerator;
+use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Syriable\Filament\Plugins\MenuBuilder\Data\ResolvedMenuItem;
@@ -19,7 +20,7 @@ use Syriable\Filament\Plugins\MenuBuilder\Tree\MenuTree;
  * Turns the published tree of a placement into frontend-ready items.
  *
  * Inactive and invisible items are removed together with their subtree,
- * labels and URLs are resolved, linked records are loaded with one query
+ * labels (translated into the current locale) and URLs are resolved, linked records are loaded with one query
  * per item type, and the current page is marked. Runs in O(n).
  */
 final readonly class MenuBuilder
@@ -30,14 +31,16 @@ final readonly class MenuBuilder
         private VisibilityResolver $visibility,
         private AuthFactory $auth,
         private UrlGenerator $url,
+        private Translator $translator,
     ) {}
 
     /**
      * @param  Authenticatable|null  $user  Defaults to the authenticated user of the default guard.
      * @param  string|null  $currentUrl  Defaults to the current request URL.
+     * @param  string|null  $locale  Language of the labels; defaults to the application locale.
      * @return Collection<int, ResolvedMenuItem>
      */
-    public function build(string $placement, ?Authenticatable $user = null, ?string $currentUrl = null): Collection
+    public function build(string $placement, ?Authenticatable $user = null, ?string $currentUrl = null, ?string $locale = null): Collection
     {
         $this->registry->placement($placement);
 
@@ -47,8 +50,9 @@ final readonly class MenuBuilder
 
         $keys = $this->visibleKeys($tree, $user);
         $records = $this->loadRecords($tree, $keys);
+        $locale ??= $this->translator->getLocale();
 
-        return collect($this->resolveChildren($tree, null, $keys, $records, $current, 1));
+        return collect($this->resolveChildren($tree, null, $keys, $records, $current, $locale, 1));
     }
 
     /**
@@ -108,7 +112,7 @@ final readonly class MenuBuilder
      * @param  array<string, array<int|string, Model>>  $records
      * @return list<ResolvedMenuItem>
      */
-    private function resolveChildren(MenuTree $tree, ?string $parentKey, array $visible, array $records, ?string $current, int $depth): array
+    private function resolveChildren(MenuTree $tree, ?string $parentKey, array $visible, array $records, ?string $current, string $locale, int $depth): array
     {
         $items = [];
 
@@ -138,13 +142,13 @@ final readonly class MenuBuilder
                 continue;
             }
 
-            $children = $this->resolveChildren($tree, $key, $visible, $records, $current, $depth + 1);
+            $children = $this->resolveChildren($tree, $key, $visible, $records, $current, $locale, $depth + 1);
             $isCurrent = $current !== null && $url !== null && $this->normalizeUrl($url) === $current;
 
             $items[] = new ResolvedMenuItem(
                 id: (int) $node->id,
                 type: $node->type,
-                label: $type->resolveLabel($node, $record),
+                label: $node->translatedLabel($locale) ?? $type->resolveLabel($node, $record),
                 url: $url,
                 depth: $depth,
                 icon: $node->icon,

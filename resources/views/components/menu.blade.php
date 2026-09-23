@@ -5,6 +5,8 @@
              at any depth), "tree" (vertical accordion, e.g. a sidebar or mobile
              drawer) or "columns" (root items as columns, e.g. a footer).
     direction: "ltr" or "rtl"; defaults to Filament's direction for the locale.
+    item-class / active-class: classes for every item element / the active ones.
+    dropdown-class: classes for the content of every dropdown panel.
 --}}
 @props([
     'items' => [],
@@ -13,6 +15,9 @@
     'headingTag' => 'span',
     'label' => null,
     'direction' => null,
+    'itemClass' => null,
+    'activeClass' => null,
+    'dropdownClass' => null,
     'withAssets' => null,
 ])
 

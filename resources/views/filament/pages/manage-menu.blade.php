@@ -21,7 +21,7 @@
         x-on:dragover="onDragOver($event)"
         x-on:dragleave="onDragLeave($event)"
         x-on:drop="onDrop($event)"
-        class="mb-tree-editor"
+        class="mb-editor mb-tree-editor"
         data-dirty="{{ $view['isDirty'] ? 'true' : 'false' }}"
     >
         <style wire:ignore x-text="collapsedCss()"></style>

@@ -6,8 +6,10 @@
     With `trigger`, the item opens a dropdown: it becomes a <button> (its page,
     if any, is listed as the first dropdown entry) and gets a chevron.
 
-    The item's custom HTML attributes are applied here (unless they target the
-    wrapper). Publish the package views to customize this markup.
+    Without an explicit item color, links and headings inherit the text color
+    of the menu (see the README for the --mb-* custom properties). The menu's
+    item-class and active-class are added here, like the item's custom HTML
+    attributes (unless those target the wrapper). Publish the package views to customize this markup.
 --}}
 @props([
     'item',
@@ -16,13 +18,15 @@
     'trigger' => false,
 ])
 
+@aware(['itemClass' => null, 'activeClass' => null])
+
 @php
     use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
     use Syriable\Filament\Plugins\MenuBuilder\Support\Icons;
 
     $icon = Icons::safe($item->icon);
     $topBadge = $item->hasBadge() && $item->badgePosition === BadgePosition::Top ? $item->badge : null;
-    $color = $item->color ?? ($item->isActive() ? 'primary' : 'gray');
+    $color = $item->color ?? 'gray';
     $headingTag = preg_match('/^[a-z][a-z0-9-]*$/', $headingTag) ? $headingTag : 'span';
 
     $kind = match (true) {
@@ -32,7 +36,14 @@
     };
 
     $elementAttributes = $item->itemAttributes()
-        ->class(['mb-item', 'mb-item-'.$kind, 'mb-trigger' => $trigger])
+        ->class([
+            'mb-item',
+            'mb-item-'.$kind,
+            'mb-trigger' => $trigger,
+            'mb-active' => $item->isActive(),
+            $itemClass,
+            $item->isActive() ? $activeClass : null,
+        ])
         ->merge(array_filter([
             'aria-current' => ! $trigger && $item->isCurrent && $item->isLink() ? 'page' : null,
             'rel' => ! $trigger && $item->openInNewTab && $item->url !== null ? 'noopener noreferrer' : null,
@@ -70,7 +81,7 @@
 @else
     <x-filament::link
         :tag="$headingTag"
-        :color="$item->color ?? 'gray'"
+        :color="$color"
         :icon="$icon"
         weight="semibold"
         :badge="$topBadge"

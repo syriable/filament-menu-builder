@@ -1,12 +1,21 @@
 /*
- * Menu builder: layout styles for <x-menu-builder::menu>.
+ * Menu builder: styles for <x-menu-builder::menu>.
  *
- * Items, buttons, badges and dropdowns are Filament components and use
- * Filament's own styles; this file only lays them out. Everything lives in
- * the `base` cascade layer and every selector is wrapped in :where(), so
- * Filament's components, Tailwind utilities and any class in your theme
- * override it. Only logical properties are used, so the same styles work
+ * Items, buttons, badges and dropdowns are Filament components. This file
+ * lays them out (the `base` layer, zero specificity via :where()) and gives
+ * links, headings and dropdown entries a plain look (the `components`
+ * layer): no hover backgrounds, and the text color of the menu unless the
+ * item has a color of its own. Tailwind utilities (the `utilities` layer)
+ * override both. Only logical properties are used, so the same styles work
  * for dir="ltr" and dir="rtl".
+ *
+ * Custom properties, set on the menu or any ancestor:
+ *   --mb-color           links and headings (default: inherited text color)
+ *   --mb-hover-color     links on hover (default: --mb-color)
+ *   --mb-active-color    the current page and its ancestors (default: --mb-color)
+ *   --mb-dropdown-color  entries in dropdown panels (default: Filament's gray)
+ *   --mb-dropdown-hover-color, --mb-dropdown-active-color
+ *   --mb-gap, --mb-submenu-indent
  */
 
 @layer base {
@@ -121,5 +130,66 @@
         flex-direction: column;
         gap: 0.5rem;
         margin-block-start: 0.75rem;
+    }
+}
+
+@layer components {
+    /* Links, headings and triggers without an item color: the menu's color. */
+
+    .mb-menu .mb-item.fi-link:not(.fi-color) {
+        color: var(--mb-color, currentColor);
+    }
+
+    .mb-menu .mb-item.fi-link:not(.fi-color):is(:hover, :focus-visible) {
+        color: var(--mb-hover-color, var(--mb-color, currentColor));
+    }
+
+    .mb-menu .mb-item.mb-active.fi-link:not(.fi-color) {
+        color: var(--mb-active-color, var(--mb-color, currentColor));
+    }
+
+    .mb-menu .mb-item:not(.fi-color):not(.fi-btn) .fi-icon {
+        color: inherit;
+    }
+
+    /* The corner badge of a link sits on the menu's own background. */
+
+    .mb-menu .mb-item .fi-link-badge-ctn {
+        background-color: transparent;
+    }
+
+    /* Dropdown panels: plain entries without hover backgrounds. */
+
+    .mb-menu .mb-panel {
+        color: var(--mb-dropdown-color, var(--gray-700));
+        border-radius: inherit;
+    }
+
+    :where(.dark) .mb-menu .mb-panel {
+        color: var(--mb-dropdown-color, var(--gray-200));
+    }
+
+    .mb-menu.mb-menu .mb-panel .fi-dropdown-list-item.fi-dropdown-list-item,
+    .mb-menu.mb-menu .mb-panel .fi-dropdown-list-item.fi-dropdown-list-item:is(:hover, :focus-visible, .fi-selected) {
+        background-color: transparent;
+    }
+
+    .mb-menu .mb-panel .fi-dropdown-list-item:not(.fi-color) .fi-dropdown-list-item-label,
+    .mb-menu .mb-panel .fi-dropdown-list-item:not(.fi-color) > .fi-icon,
+    .mb-menu .mb-panel .fi-dropdown-header:not(.fi-color) span,
+    .mb-menu .mb-panel .fi-dropdown-header:not(.fi-color) .fi-icon {
+        color: inherit;
+    }
+
+    .mb-menu .mb-panel .fi-dropdown-list-item:not(.fi-color):is(:hover, :focus-visible) {
+        color: var(--mb-dropdown-hover-color, inherit);
+    }
+
+    .mb-menu .mb-panel .fi-dropdown-list-item.mb-active:not(.fi-color) {
+        color: var(--mb-dropdown-active-color, inherit);
+    }
+
+    .mb-menu .mb-panel .fi-dropdown-list-item:is(:hover, :focus-visible) .fi-dropdown-list-item-label {
+        text-decoration: underline;
     }
 }

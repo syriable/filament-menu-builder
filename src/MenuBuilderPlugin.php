@@ -30,6 +30,11 @@ class MenuBuilderPlugin implements Plugin
 
     protected ?int $navigationSort = null;
 
+    /** @var array<string, string> */
+    protected array $locales = [];
+
+    protected bool $slideOver = true;
+
     public static function make(): static
     {
         return app(static::class);
@@ -89,6 +94,50 @@ class MenuBuilderPlugin implements Plugin
         $this->navigationSort = $sort;
 
         return $this;
+    }
+
+    /**
+     * Locales the item labels can be translated into, e.g. ['en', 'ar'] or
+     * ['en' => 'English', 'ar' => 'العربية']. The item form then shows one
+     * label field per locale; the frontend uses the one of the current locale
+     * and falls back to the default label.
+     *
+     * @param  array<int|string, string>  $locales
+     */
+    public function locales(array $locales): static
+    {
+        $this->locales = [];
+
+        foreach ($locales as $locale => $label) {
+            is_int($locale)
+                ? $this->locales[$label] = $label
+                : $this->locales[$locale] = $label;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Whether the item form opens in a slide-over (default) or a modal.
+     */
+    public function slideOver(bool $condition = true): static
+    {
+        $this->slideOver = $condition;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, string> Locale => label.
+     */
+    public function getLocales(): array
+    {
+        return $this->locales;
+    }
+
+    public function hasSlideOver(): bool
+    {
+        return $this->slideOver;
     }
 
     public function shouldRegisterNavigation(): bool

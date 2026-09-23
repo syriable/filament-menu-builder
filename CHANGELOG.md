@@ -4,6 +4,12 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- Fix: the editor stylesheet is scoped to `.mb-editor`. Its `.mb-row` and `.mb-label` rules leaked onto frontend menus through `@filamentStyles`, causing a light hover background and near-black labels.
+- Links, headings and dropdown entries now inherit the menu's text color and have no hover background. Items with an explicit color keep it.
+- New `item-class`, `active-class` and `dropdown-class` props, `--mb-color`, `--mb-hover-color`, `--mb-active-color` and `--mb-dropdown-*` custom properties, and an `mb-active` class on active items.
+- Translatable labels: `MenuBuilderPlugin::locales()` adds a label field per locale, stored in `data.label_translations`, and `Menu::build()` gains a `locale` argument (default: the app locale).
+- The item form opens in a slide-over. Use `MenuBuilderPlugin::slideOver(false)` for a modal.
+
 - The frontend renderer is built on Filament's Blade components: links and headings use `<x-filament::link>`, buttons `<x-filament::button>`, badges `<x-filament::badge>`, items with children `<x-filament::dropdown>` (nested at any depth, opening towards the inline end, with flip and shift), dropdown entries `dropdown.list.item` / `dropdown.header`, and accordion toggles `<x-filament::icon-button>`.
 - New `direction` prop (`ltr`/`rtl`, defaulting to the locale's Filament direction) on `menu`, `header`, `footer` and `sidebar`.
 - A link with children lists its own page as the first dropdown entry; unknown icons are skipped instead of throwing; custom item components also render dropdown entries.

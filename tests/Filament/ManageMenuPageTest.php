@@ -536,3 +536,49 @@ describe('authorization', function (): void {
         livewire(ManageMenu::class, ['placement' => 'sidebar'])->assertActionVisible('createItem');
     });
 });
+
+describe('item form', function (): void {
+    it('opens in a slide-over by default', function (): void {
+        $page = livewire(ManageMenu::class, ['placement' => 'header'])->instance();
+
+        expect($page->getAction('createItem')->isModalSlideOver())->toBeTrue()
+            ->and($page->getAction('editItem')->isModalSlideOver())->toBeTrue();
+    });
+
+    it('can open in a modal instead', function (): void {
+        filament()->getPanel('admin')->getPlugin('menu-builder')->slideOver(false);
+
+        $page = livewire(ManageMenu::class, ['placement' => 'header'])->instance();
+
+        expect($page->getAction('createItem')->isModalSlideOver())->toBeFalse();
+    });
+
+    it('has no translation fields without locales', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->assertFormFieldDoesNotExist('item-fields.data.label_translations.ar');
+    });
+
+    it('stores label translations for the configured locales', function (): void {
+        filament()->getPanel('admin')->getPlugin('menu-builder')->locales(['en' => 'English', 'ar' => 'العربية']);
+
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->assertFormFieldVisible('item-fields.data.label_translations.en')
+            ->assertFormFieldVisible('item-fields.data.label_translations.ar')
+            ->callMountedAction()
+            ->assertHasActionErrors(['label']);
+
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Pricing',
+                'data' => ['link_type' => 'url', 'url' => '/pricing', 'label_translations' => ['ar' => 'الأسعار']],
+            ])
+            ->assertHasNoActionErrors()
+            ->callAction('save');
+
+        expect(Menu::build('header', locale: 'ar')->last()->label)->toBe('الأسعار')
+            ->and(Menu::build('header', locale: 'en')->last()->label)->toBe('Pricing');
+    });
+});

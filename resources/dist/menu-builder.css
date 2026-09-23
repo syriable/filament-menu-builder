@@ -1,15 +1,17 @@
 /*
  * Menu builder styles. Written against Filament's CSS variables so the
- * plugin works without the host rebuilding its Tailwind theme.
+ * plugin works without the host rebuilding its Tailwind theme. Every rule is
+ * scoped to .mb-editor: Filament loads this file on every page that uses
+ * @filamentStyles, including public pages that render menus.
  */
 
-.mb-placements {
+.mb-editor.mb-placements {
     display: grid;
     gap: 1rem;
     grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
 }
 
-.mb-placement-card {
+.mb-editor .mb-placement-card {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -21,35 +23,35 @@
     transition: outline-color 150ms;
 }
 
-.mb-placement-card:hover,
-.mb-placement-card:focus-visible {
+.mb-editor .mb-placement-card:hover,
+.mb-editor .mb-placement-card:focus-visible {
     outline-color: var(--primary-500);
 }
 
-.mb-placement-card-header {
+.mb-editor .mb-placement-card-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
-.mb-placement-card-icon {
+.mb-editor .mb-placement-card-icon {
     width: 1.25rem;
     height: 1.25rem;
     color: var(--gray-400);
 }
 
-.mb-placement-card-title {
+.mb-editor .mb-placement-card-title {
     font-weight: 600;
     color: var(--gray-950);
 }
 
-.mb-placement-card-description,
-.mb-muted {
+.mb-editor .mb-placement-card-description,
+.mb-editor .mb-muted {
     font-size: 0.875rem;
     color: var(--gray-500);
 }
 
-.mb-placement-card-footer {
+.mb-editor .mb-placement-card-footer {
     display: flex;
     justify-content: space-between;
     margin-top: auto;
@@ -57,12 +59,12 @@
     color: var(--gray-500);
 }
 
-.mb-placement-card-link {
+.mb-editor .mb-placement-card-link {
     font-weight: 600;
     color: var(--primary-600);
 }
 
-.mb-toolbar {
+.mb-editor .mb-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -71,14 +73,14 @@
     margin-bottom: 1rem;
 }
 
-.mb-status,
-.mb-toolbar-actions {
+.mb-editor .mb-status,
+.mb-editor .mb-toolbar-actions {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
-.mb-empty {
+.mb-editor .mb-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -88,26 +90,26 @@
     color: var(--gray-500);
 }
 
-.mb-empty-icon {
+.mb-editor .mb-empty-icon {
     width: 2rem;
     height: 2rem;
     color: var(--gray-400);
 }
 
-.mb-tree,
-.mb-children {
+.mb-editor .mb-tree,
+.mb-editor .mb-children {
     list-style: none;
     margin: 0;
     padding: 0;
 }
 
-.mb-children {
+.mb-editor .mb-children {
     margin-inline-start: 1.25rem;
     padding-inline-start: 0.75rem;
     border-inline-start: 1px dashed var(--gray-200);
 }
 
-.mb-row {
+.mb-editor .mb-row {
     position: relative;
     display: flex;
     align-items: center;
@@ -117,45 +119,45 @@
     border-radius: 0.5rem;
 }
 
-.mb-row:hover {
+.mb-editor .mb-row:hover {
     background: var(--gray-50);
 }
 
-.mb-handle {
+.mb-editor .mb-handle {
     cursor: grab;
     color: var(--gray-400);
     touch-action: none;
 }
 
-.mb-handle:active {
+.mb-editor .mb-handle:active {
     cursor: grabbing;
 }
 
-.mb-toggle,
-.mb-toggle-spacer {
+.mb-editor .mb-toggle,
+.mb-editor .mb-toggle-spacer {
     display: inline-flex;
     flex-shrink: 0;
     width: 1rem;
     color: var(--gray-400);
 }
 
-.mb-toggle svg {
+.mb-editor .mb-toggle svg {
     transition: transform 150ms;
 }
 
-.mb-icon-sm {
+.mb-editor .mb-icon-sm {
     width: 1rem;
     height: 1rem;
 }
 
-.mb-node-icon {
+.mb-editor .mb-node-icon {
     flex-shrink: 0;
     width: 1.25rem;
     height: 1.25rem;
     color: var(--gray-500);
 }
 
-.mb-label {
+.mb-editor .mb-label {
     overflow: hidden;
     font-size: 0.875rem;
     font-weight: 500;
@@ -164,18 +166,18 @@
     text-overflow: ellipsis;
 }
 
-.mb-label-inactive {
+.mb-editor .mb-label-inactive {
     color: var(--gray-400);
     text-decoration: line-through;
 }
 
-.mb-type {
+.mb-editor .mb-type {
     flex-shrink: 0;
     font-size: 0.75rem;
     color: var(--gray-500);
 }
 
-.mb-actions {
+.mb-editor .mb-actions {
     display: flex;
     gap: 0.125rem;
     margin-inline-start: auto;
@@ -183,28 +185,28 @@
     transition: opacity 150ms;
 }
 
-.mb-row:hover .mb-actions,
-.mb-row:focus-within .mb-actions {
+.mb-editor .mb-row:hover .mb-actions,
+.mb-editor .mb-row:focus-within .mb-actions {
     opacity: 1;
 }
 
 @media (hover: none) {
-    .mb-actions {
+    .mb-editor .mb-actions {
         opacity: 1;
     }
 }
 
-.mb-dragging > .mb-row {
+.mb-editor .mb-dragging > .mb-row {
     opacity: 0.4;
 }
 
-.mb-drop-inside {
+.mb-editor .mb-drop-inside {
     background: color-mix(in oklab, var(--primary-500) 12%, transparent);
     outline: 2px dashed var(--primary-500);
 }
 
-.mb-drop-before::before,
-.mb-drop-after::after {
+.mb-editor .mb-drop-before::before,
+.mb-editor .mb-drop-after::after {
     content: '';
     position: absolute;
     inset-inline-start: var(--mb-drop-indent, 0);
@@ -214,15 +216,15 @@
     pointer-events: none;
 }
 
-.mb-drop-before::before {
+.mb-editor .mb-drop-before::before {
     top: -1px;
 }
 
-.mb-drop-after::after {
+.mb-editor .mb-drop-after::after {
     bottom: -1px;
 }
 
-.mb-root-drop {
+.mb-editor .mb-root-drop {
     display: none;
     position: relative;
     margin-top: 0.5rem;
@@ -234,45 +236,45 @@
     text-align: center;
 }
 
-.mb-is-dragging .mb-root-drop {
+.mb-editor.mb-is-dragging .mb-root-drop {
     display: block;
 }
 
-.mb-root-drop.mb-drop-after {
+.mb-editor .mb-root-drop.mb-drop-after {
     border-color: var(--primary-500);
     color: var(--primary-600);
 }
 
-.mb-root-drop.mb-drop-after::after {
+.mb-editor .mb-root-drop.mb-drop-after::after {
     display: none;
 }
 
-:is(.dark) .mb-root-drop {
+:is(.dark) .mb-editor .mb-root-drop {
     border-color: color-mix(in oklab, white 15%, transparent);
 }
 
-:is(.dark) .mb-placement-card {
+:is(.dark) .mb-editor .mb-placement-card {
     background: var(--gray-900);
     outline-color: color-mix(in oklab, white 10%, transparent);
 }
 
-:is(.dark) .mb-placement-card-title,
-:is(.dark) .mb-label {
+:is(.dark) .mb-editor .mb-placement-card-title,
+:is(.dark) .mb-editor .mb-label {
     color: white;
 }
 
-:is(.dark) .mb-placement-card-link {
+:is(.dark) .mb-editor .mb-placement-card-link {
     color: var(--primary-400);
 }
 
-:is(.dark) .mb-row:hover {
+:is(.dark) .mb-editor .mb-row:hover {
     background: color-mix(in oklab, white 5%, transparent);
 }
 
-:is(.dark) .mb-children {
+:is(.dark) .mb-editor .mb-children {
     border-color: color-mix(in oklab, white 10%, transparent);
 }
 
-:is(.dark) .mb-label-inactive {
+:is(.dark) .mb-editor .mb-label-inactive {
     color: var(--gray-500);
 }
