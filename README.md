@@ -176,7 +176,13 @@ MenuItemType::make('divider')
 
 Resolver closures can ask for `$item` (the `MenuNode`), `$data` (the item's data array) and `$record` (the linked model; see below).
 
-The `data` keys `render_as`, `attributes`, `attribute_target` and `badge_position` are shared by all item types (see [Rendering](#rendering-link-button-heading)). Don't use them for custom fields.
+The `data` keys `attributes`, `attribute_target`, `badge_position` and `render_as` are shared by all item types. Don't use them for custom fields.
+
+A custom type can render as a button too, which is useful for model-backed call-to-action items:
+
+```php
+MenuItemType::make('cta')->renderAs(RenderAs::Button)->resolveUrlUsing(fn () => route('register'));
+```
 
 ## Model-backed items
 
@@ -238,7 +244,8 @@ $items = Menu::build('header', currentUrl: $url);
 | `isActiveTrail` | a descendant is the current page |
 | `isActive()` | `isCurrent || isActiveTrail` |
 | `children`, `hasChildren()`, `isDropdown()` | nested `ResolvedMenuItem`s; items with children are dropdowns |
-| `renderAs`, `isLink()`, `isButton()`, `isHeading()` | the item's root element (see [Rendering](#rendering-link-button-heading)) |
+| `renderAs`, `isLink()`, `isButton()`, `isHeading()` | the item's root element: link, [button](#buttons) or heading, from the item type |
+| `buttonOption($key, $default)` | button settings: `size`, `outlined`, `icon_position` |
 | `attributes`, `attributeTarget` | validated custom HTML attributes and where they go |
 | `itemAttributes()`, `wrapperAttributes()` | escaped `ComponentAttributeBag`s for the item element and its `<li>` |
 | `badgePosition`, `hasBadge()` | `start`, `end` or `top` |
@@ -358,33 +365,91 @@ There are two ways to change how a single item renders:
 
 Use `$item->itemAttributes()` in custom components. It returns an escaped attribute bag, so administrator-entered values are always safe to print.
 
-## Rendering: link, button, heading
+## Buttons
 
-Every item has one root element, chosen with **Render as** in the item form:
-
-| Render as | Element | |
-| --- | --- | --- |
-| Automatic (default) | `<a>` for types with a URL, otherwise the heading tag | existing menus keep rendering as before |
-| Link | `<a href="…">` | only for types with a URL |
-| Button | `<button type="button">` | needs **no URL** |
-| Heading | `<span>` (see `heading-tag`) | plain text |
-
-A button does nothing by itself. Your application decides what it does through its attributes, for example opening a modal, drawer, dropdown or search, or triggering Alpine or Livewire:
+**Button** is a built-in item type, next to **Heading** and **Link**. Choose it when you create an item:
 
 ```text
-Render as:  Button
-Attributes: data-modal = login
-            x-on:click = $dispatch('open-modal', { id: 'login' })
-            aria-label = Open login
+Type: Heading | Link | Button
+```
+
+Buttons render with Filament's own button component, [`<x-filament::button>`](https://filamentphp.com/docs/5.x/components/button), and the item form controls it:
+
+| Field | Maps to |
+| --- | --- |
+| Label | the button text |
+| Color (Appearance) | `color`: primary, gray, info, success, warning or danger (default primary) |
+| Size | `size`: XS, S, M (default), L or XL |
+| Outlined | `outlined` |
+| Icon (Appearance) + Icon position | `icon` and `icon-position` (before or after) |
+| Badge + Badge position | Filament's corner badge for *top*; inline for *start* and *end* |
+| URL (optional) | empty gives `<button type="button">`; filled gives a link styled as a button |
+| HTML attributes | added to the button element |
+
+A button without a URL does nothing by itself. Your application decides what it does through the item's HTML attributes, for example opening a modal, a drawer or search, or triggering Alpine or Livewire:
+
+```text
+Type:       Button
+Label:      Login
+Attributes: x-on:click = $dispatch('open-modal', { id: 'login' })
+            data-modal = login
 ```
 
 ```html
-<button type="button" class="mb-item mb-item-button" data-modal="login" x-on:click="$dispatch('open-modal', { id: 'login' })" aria-label="Open login">Login</button>
+<button type="button" class="fi-btn fi-color fi-color-primary fi-size-md … mb-item mb-item-button"
+        x-on:click="$dispatch('open-modal', { id: 'login' })" data-modal="login">Login</button>
+```
+
+In code:
+
+```php
+['type' => 'button', 'label' => 'Login', 'color' => 'gray', 'icon' => 'heroicon-o-user', 'data' => [
+    'size' => 'sm',
+    'outlined' => true,
+    'attributes' => ['x-on:click' => "\$dispatch('open-modal', { id: 'login' })"],
+]]
+```
+
+### Filament styles on your frontend
+
+Inside a Filament panel, buttons are styled automatically. On your public site, load Filament's styles once, the same way Filament's own `filament:install --scaffold` does:
+
+```css
+/* resources/css/app.css */
+@import 'tailwindcss';
+@import '../../vendor/filament/support/resources/css/index.css';
+```
+
+```blade
+<head>
+    @filamentStyles
+    @vite('resources/css/app.css')
+</head>
+<body>
+    …
+    @filamentScripts
+</body>
+```
+
+Filament registers its colors when a *panel* serves a request, so on non-panel pages register them yourself, e.g. in `AppServiceProvider::boot()`:
+
+```php
+use Filament\Support\Colors\Color;
+use Filament\Support\Facades\FilamentColor;
+
+FilamentColor::register([
+    'primary' => Color::Amber,
+    'gray' => Color::Zinc,
+    'info' => Color::Blue,
+    'success' => Color::Green,
+    'warning' => Color::Orange,
+    'danger' => Color::Red,
+]);
 ```
 
 ## HTML attributes
 
-Every item can carry any HTML attributes, edited as key/value pairs in the item form. There is no allow-list:
+Every item, whatever its type (Heading, Link, Button or a custom type), can carry any HTML attributes. You edit them as key/value pairs in the **HTML attributes** section of the item form. There is no allow-list:
 
 ```text
 class      = btn btn-primary
@@ -396,7 +461,7 @@ wire:click = openLogin
 ```
 
 - **Storage:** attributes live in the existing `data` JSON column under `data.attributes`, so adding a new attribute never needs a migration.
-- **Target:** **Apply attributes to** chooses the item element (`<a>`, `<button>` or heading; the default) or its wrapper (`<li>`). Children never inherit them.
+- **Target:** **Apply attributes to** chooses the item element (`<a>`, the Filament button or the heading; the default) or its wrapper (`<li>`). Children never inherit them.
 - **Merging:** `class` is appended to the package classes. Any other attribute overrides the default, for example `type="submit"` or `rel`.
 - **Empty values** render as bare attributes (`data-flag`). The HTML boolean attributes (`disabled`, `hidden`, `required`, `open`, …) are left out when the value is `false`, `0`, `off` or `no`. Other attributes keep their text, so `aria-expanded="false"` stays as it is.
 - **Safety:** attribute names are validated on every write path. Anything that could break out of the attribute syntax (whitespace, quotes, `<`, `>`, `/` or `=`) is rejected, and the renderer drops such names again as a second line of defense. Values are always HTML-escaped.

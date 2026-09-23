@@ -122,7 +122,7 @@ describe('attributes', function (): void {
             ],
         ])]), '//button[@id="open-login"]');
 
-        expect($button->getAttribute('class'))->toBe('mb-item mb-item-button btn btn-primary')
+        expect($button->getAttribute('class'))->toContain('fi-btn')->toContain('mb-item-button')->toContain('btn btn-primary')
             ->and($button->getAttribute('data-modal'))->toBe('login')
             ->and($button->getAttribute('aria-label'))->toBe('Open login')
             ->and($button->getAttribute('x-on:click'))->toBe("\$dispatch('open-modal', { id: 'login' })")
@@ -316,6 +316,75 @@ describe('tree', function (): void {
             ->and(substr_count($html, '<script'))->toBe(1)
             ->and($html)->toContain('.mb-menu');
     });
+});
+
+describe('filament buttons', function (): void {
+    it('renders button items with the Filament button component', function (): void {
+        $button = one(renderMenu([resolved('Login', [
+            'type' => 'button',
+            'url' => null,
+            'renderAs' => RenderAs::Button,
+            'color' => 'danger',
+            'data' => ['size' => 'lg', 'outlined' => true],
+            'attributes' => ['data-modal' => 'login'],
+        ])]), '//button[contains(@class, "fi-btn")]');
+
+        expect($button->getAttribute('class'))
+            ->toContain('fi-color-danger')
+            ->toContain('fi-size-lg')
+            ->toContain('fi-outlined')
+            ->toContain('mb-item-button')
+            ->and($button->getAttribute('type'))->toBe('button')
+            ->and($button->getAttribute('data-modal'))->toBe('login')
+            ->and(trim($button->textContent))->toBe('Login');
+    });
+
+    it('uses sensible defaults', function (): void {
+        $button = one(renderMenu([resolved('Go', ['type' => 'button', 'url' => null, 'renderAs' => RenderAs::Button])]), '//button[contains(@class, "fi-btn")]');
+
+        expect($button->getAttribute('class'))->toContain('fi-color-primary')->toContain('fi-size-md')->not->toContain('fi-outlined');
+    });
+
+    it('renders a button with a URL as a link styled as a button', function (): void {
+        $link = one(renderMenu([resolved('Sign up', [
+            'type' => 'button',
+            'url' => '/register',
+            'openInNewTab' => true,
+            'renderAs' => RenderAs::Button,
+        ])]), '//a[contains(@class, "fi-btn")]');
+
+        expect($link->getAttribute('href'))->toBe('/register')
+            ->and($link->getAttribute('target'))->toBe('_blank');
+    });
+
+    it('escapes attribute values exactly once', function (): void {
+        $html = Blade::render('<x-menu-builder::menu :items="$items" />', ['items' => [resolved('X', [
+            'type' => 'button',
+            'url' => null,
+            'renderAs' => RenderAs::Button,
+            'attributes' => ['title' => '"><b>x & y'],
+        ])]]);
+
+        expect($html)->toContain('title="&quot;&gt;&lt;b&gt;x &amp; y"')
+            ->not->toContain('&amp;quot;')
+            ->not->toContain('<b>x');
+    });
+
+    it('renders the badge on the button', function (BadgePosition $position, string $query): void {
+        $xpath = renderMenu([resolved('Cart', [
+            'type' => 'button',
+            'url' => null,
+            'renderAs' => RenderAs::Button,
+            'badge' => '3',
+            'badgePosition' => $position,
+        ])]);
+
+        expect(trim(one($xpath, $query)->textContent))->toBe('3');
+    })->with([
+        'top uses the Filament badge' => [BadgePosition::Top, '//button//*[contains(@class, "fi-badge")]'],
+        'start' => [BadgePosition::Start, '//button/span[contains(@class, "mb-badge--start")]'],
+        'end' => [BadgePosition::End, '//button/span[contains(@class, "mb-badge--end")]'],
+    ]);
 });
 
 describe('badges', function (): void {

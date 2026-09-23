@@ -28,7 +28,7 @@ src/
 ├── MenuItemType.php                 item type definition (form, rules, resolvers)
 ├── MenuVisibility.php               named visibility rule
 ├── MenuBuilder.php                  published tree → ResolvedMenuItem[]
-├── ItemTypes/                       built-in heading and link types
+├── ItemTypes/                       built-in heading, link and button types
 ├── Tree/
 │   ├── MenuNode.php                 immutable item attributes
 │   ├── MenuTree.php                 in-memory adjacency list (the one tree implementation)
@@ -148,7 +148,9 @@ Alpine names on the root are specific (`toggleItem`, `expandAllItems`, and so on
 
 ## Rendering: attributes, render as and badges
 
-Rendering options are **shared keys inside the existing `data` JSON** (`render_as`, `attributes`, `attribute_target` and `badge_position`, defined as `MenuNode::DATA_*` constants). No migration is needed and existing rows keep working: a missing key means "automatic" or the default.
+The element an item renders as comes from its **type**: `MenuItemType::renderAs()` (Heading → heading, Link → link, Button → button, custom types → link when they have a URL, otherwise heading). The built-in `ButtonType` stores its Filament button settings (`size`, `outlined`, `icon_position`, optional `url`) in `data`, and uses the item's color and icon. The item component renders it with `<x-filament::button>`.
+
+Presentation options shared by every type are **keys inside the existing `data` JSON** (`attributes`, `attribute_target` and `badge_position`, plus the legacy per-item `render_as` override), defined as `MenuNode::DATA_*` constants. No migration is needed, and existing rows fall back to the defaults.
 
 - **Validation** lives in `MenuTreeGuard::validateItem()` next to the other common attributes. It checks the enum values, `render_as=link` only for types with a URL, attribute names and scalar values. `LinkType` excludes its URL and route rules when an item renders as a button or heading.
 - **Normalization** happens in `MenuNode` accessors, which `MenuBuilder` copies into `ResolvedMenuItem`. `HtmlAttributes::normalize()` drops invalid names (defense in depth for rows written around the guard), turns empty values into bare attributes and switches off boolean attributes set to `false`, `0`, `off` or `no`.
@@ -163,14 +165,14 @@ Four anonymous components make up one renderer:
 | --- | --- |
 | `menu` | `<nav>`, variant (`dropdown`, `tree` or `columns`), assets |
 | `items` | one level: the `<li>` wrapper (plus wrapper attributes), the toggle button and the recursion into children |
-| `item` | the item's root element, icon, label and badges (the main override point) |
+| `item` | the item's root element (`<a>`, `<x-filament::button>` or heading), icon, label and badges (the main override point) |
 | `badge` | the badge markup |
 
 `header`, `footer` and `sidebar` are one-line wrappers that pass a variant to `menu`. There is no placement-specific rendering logic. Dropdowns are derived from `hasChildren()` alone, at any depth.
 
 Behavior is split so that each part stays small:
 
-- **CSS** (`resources/dist/frontend/menu.css`) positions everything with logical properties, inside `:where()` (zero specificity). Submenus are an accordion by default (`[data-open]`). Above 48rem, the `dropdown` variant absolutely positions them: first level below the parent, deeper levels at `inset-inline-start: 100%`. The `.mb-flip` class mirrors them to the inline start.
+- **CSS** (`resources/dist/frontend/menu.css`) positions everything with logical properties, inside `:where()` (zero specificity) and in the `base` cascade layer. Otherwise, as unlayered CSS, its resets would beat Filament's `.fi-btn` styles and the host's Tailwind utilities, which live in the `components` and `utilities` layers. Submenus are an accordion by default (`[data-open]`). Above 48rem, the `dropdown` variant absolutely positions them: first level below the parent, deeper levels at `inset-inline-start: 100%`. The `.mb-flip` class mirrors them to the inline start.
 - **JS** (`resources/dist/frontend/menu.js`, no dependencies) handles only the toggle buttons (`data-open` and `aria-expanded`), `Escape`, click-outside, and the flip check. On hover, focus or open it measures the submenu against the viewport using the element's computed direction.
 - Both files are printed inline once per page (`@once`, with the Vite CSP nonce when set) and can be switched off with `menu-builder.frontend.assets`.
 

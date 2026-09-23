@@ -78,6 +78,16 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
         return $this->hasChildren();
     }
 
+    /**
+     * A button setting stored by the button item type (size, outlined, icon_position).
+     */
+    public function buttonOption(string $key, mixed $default = null): mixed
+    {
+        $value = $this->data[$key] ?? null;
+
+        return $value === null || $value === '' ? $default : $value;
+    }
+
     public function hasBadge(): bool
     {
         return $this->badge !== null && $this->badge !== '';

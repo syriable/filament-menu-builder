@@ -84,8 +84,8 @@ it('resolves the allowed item types from placement rules', function (): void {
 
     $allowed = fn (string $placement, ?string $parentType): array => array_keys($registry->allowedItemTypes($registry->placement($placement), $parentType));
 
-    expect($allowed('header', null))->toBe(['heading', 'link'])
-        ->and($allowed('header', 'link'))->toBe(['heading', 'link'])
+    expect($allowed('header', null))->toBe(['heading', 'link', 'button'])
+        ->and($allowed('header', 'link'))->toBe(['heading', 'link', 'button'])
         ->and($allowed('footer', null))->toBe(['heading'])
         ->and($allowed('footer', 'heading'))->toBe(['link'])
         ->and($allowed('footer', 'link'))->toBe([]);

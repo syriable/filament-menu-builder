@@ -7,6 +7,7 @@ namespace Syriable\Filament\Plugins\MenuBuilder;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Syriable\Filament\Plugins\MenuBuilder\Exceptions\UnknownItemType;
 use Syriable\Filament\Plugins\MenuBuilder\Exceptions\UnknownPlacement;
+use Syriable\Filament\Plugins\MenuBuilder\ItemTypes\ButtonType;
 use Syriable\Filament\Plugins\MenuBuilder\ItemTypes\HeadingType;
 use Syriable\Filament\Plugins\MenuBuilder\ItemTypes\LinkType;
 
@@ -34,6 +35,7 @@ class MenuRegistry
     {
         $this->registerItemType(HeadingType::make());
         $this->registerItemType(LinkType::make());
+        $this->registerItemType(ButtonType::make());
 
         $this->registerVisibility(MenuVisibility::make(
             MenuVisibility::EVERYONE,

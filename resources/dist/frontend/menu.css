@@ -1,236 +1,240 @@
 /*
  * Menu builder: structural frontend styles.
  *
- * Every selector is wrapped in :where() (zero specificity), so a single class
- * in your theme overrides it. Only logical properties are used, so the same
+ * Everything lives in the `base` cascade layer and every selector is wrapped
+ * in :where() (zero specificity), so Filament's components (e.g. the button
+ * used by button items), Tailwind utilities and any class in your theme
+ * override it. Only logical properties are used, so the same
  * styles work for dir="ltr" and dir="rtl". Tune the look with the --mb-*
  * custom properties.
  */
 
-:where(.mb-menu) {
-    --mb-gap: 0.25rem;
-    --mb-radius: 0.5rem;
-    --mb-item-padding: 0.5rem 0.75rem;
-    --mb-submenu-background: #fff;
-    --mb-submenu-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(0 0 0 / 0.06);
-    --mb-submenu-min-width: 12rem;
-    --mb-submenu-indent: 1rem;
-    --mb-badge-background: #e5e7eb;
-    --mb-badge-color: #1f2937;
-}
+@layer base {
+    :where(.mb-menu) {
+        --mb-gap: 0.25rem;
+        --mb-radius: 0.5rem;
+        --mb-item-padding: 0.5rem 0.75rem;
+        --mb-submenu-background: #fff;
+        --mb-submenu-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(0 0 0 / 0.06);
+        --mb-submenu-min-width: 12rem;
+        --mb-submenu-indent: 1rem;
+        --mb-badge-background: #e5e7eb;
+        --mb-badge-color: #1f2937;
+    }
 
-:where(.mb-menu .mb-list) {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
+    :where(.mb-menu .mb-list) {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
 
-:where(.mb-menu .mb-entry) {
-    position: relative;
-    min-width: 0;
-}
+    :where(.mb-menu .mb-entry) {
+        position: relative;
+        min-width: 0;
+    }
 
-:where(.mb-menu .mb-row) {
-    display: flex;
-    align-items: center;
-    gap: var(--mb-gap);
-    min-width: 0;
-}
-
-:where(.mb-menu .mb-item) {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    min-width: 0;
-    padding: var(--mb-item-padding);
-    border: 0;
-    border-radius: var(--mb-radius);
-    background: none;
-    color: inherit;
-    font: inherit;
-    text-align: start;
-    text-decoration: none;
-}
-
-:where(.mb-menu .mb-item-link, .mb-menu .mb-item-button) {
-    cursor: pointer;
-}
-
-:where(.mb-menu .mb-item-heading) {
-    font-weight: 600;
-}
-
-:where(.mb-menu .mb-current > .mb-row > .mb-item) {
-    font-weight: 600;
-}
-
-:where(.mb-menu .mb-label) {
-    position: relative;
-    overflow-wrap: anywhere;
-}
-
-:where(.mb-menu .mb-icon) {
-    display: inline-flex;
-    flex-shrink: 0;
-}
-
-:where(.mb-menu .mb-icon-svg) {
-    width: 1.25em;
-    height: 1.25em;
-}
-
-:where(.mb-menu .mb-toggle) {
-    display: inline-flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    padding: 0.25rem;
-    border: 0;
-    border-radius: var(--mb-radius);
-    background: none;
-    color: inherit;
-    cursor: pointer;
-}
-
-:where(.mb-menu .mb-chevron) {
-    width: 1rem;
-    height: 1rem;
-    transition: rotate 150ms;
-}
-
-:where(.mb-menu .mb-entry[data-open] > .mb-row .mb-chevron) {
-    rotate: 180deg;
-}
-
-/* Submenus: collapsed accordions by default (small screens, tree variant). */
-
-:where(.mb-menu .mb-submenu) {
-    display: none;
-    padding-inline-start: var(--mb-submenu-indent);
-}
-
-:where(.mb-menu .mb-entry[data-open] > .mb-submenu) {
-    display: block;
-}
-
-/* Badges: start and end follow the document direction, top sits on the end edge of the label. */
-
-:where(.mb-menu .mb-badge) {
-    display: inline-flex;
-    flex-shrink: 0;
-    align-items: center;
-    padding-inline: 0.45em;
-    border-radius: 999px;
-    background: var(--mb-badge-background);
-    color: var(--mb-badge-color);
-    font-size: 0.7em;
-    font-weight: 600;
-    line-height: 1.6;
-    white-space: nowrap;
-}
-
-:where(.mb-menu .mb-badge--top) {
-    position: absolute;
-    inset-block-end: calc(100% - 0.4em);
-    inset-inline-end: -0.9em;
-    pointer-events: none;
-}
-
-:where(.mb-menu .mb-item:has(.mb-badge--top)) {
-    padding-block-start: 0.85rem;
-    padding-inline-end: 1.25rem;
-}
-
-:where(.mb-menu .mb-badge[data-color='primary']) { --mb-badge-background: #dbeafe; --mb-badge-color: #1e40af; }
-:where(.mb-menu .mb-badge[data-color='info']) { --mb-badge-background: #e0f2fe; --mb-badge-color: #075985; }
-:where(.mb-menu .mb-badge[data-color='success']) { --mb-badge-background: #dcfce7; --mb-badge-color: #166534; }
-:where(.mb-menu .mb-badge[data-color='warning']) { --mb-badge-background: #fef3c7; --mb-badge-color: #92400e; }
-:where(.mb-menu .mb-badge[data-color='danger']) { --mb-badge-background: #fee2e2; --mb-badge-color: #991b1b; }
-
-/* Columns (footer): root items become columns, children are always shown. */
-
-:where(.mb-menu--columns > .mb-root) {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-    gap: 1.5rem;
-}
-
-:where(.mb-menu--columns .mb-submenu) {
-    display: block;
-    padding-inline-start: 0;
-}
-
-:where(.mb-menu--columns > .mb-root > .mb-entry > .mb-row > .mb-item) {
-    font-weight: 600;
-}
-
-/* Dropdown (header / navbar) on wide screens. */
-
-@media (min-width: 48rem) {
-    :where(.mb-menu--dropdown > .mb-root) {
+    :where(.mb-menu .mb-row) {
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
         gap: var(--mb-gap);
+        min-width: 0;
     }
 
-    :where(.mb-menu--dropdown .mb-submenu) {
-        position: absolute;
-        z-index: 50;
-        inset-block-start: 100%;
-        inset-inline-start: 0;
-        min-width: var(--mb-submenu-min-width);
-        max-width: min(20rem, calc(100vw - 1rem));
-        padding: 0.375rem;
+    :where(.mb-menu .mb-item) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        min-width: 0;
+        padding: var(--mb-item-padding);
+        border: 0;
         border-radius: var(--mb-radius);
-        background: var(--mb-submenu-background);
-        box-shadow: var(--mb-submenu-shadow);
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        text-decoration: none;
     }
 
-    /* Nested submenus open towards the inline end: right in LTR, left in RTL. */
-    :where(.mb-menu--dropdown .mb-submenu .mb-submenu) {
-        inset-block-start: -0.375rem;
-        inset-inline-start: 100%;
+    :where(.mb-menu .mb-item-link, .mb-menu .mb-item-button) {
+        cursor: pointer;
     }
 
-    :where(.mb-menu--dropdown .mb-submenu .mb-row) {
-        justify-content: space-between;
+    :where(.mb-menu .mb-item-heading) {
+        font-weight: 600;
     }
 
-    :where(.mb-menu--dropdown .mb-submenu .mb-item) {
-        flex: 1;
+    :where(.mb-menu .mb-current > .mb-row > .mb-item) {
+        font-weight: 600;
     }
 
-    :where(.mb-menu--dropdown .mb-submenu .mb-chevron) {
-        rotate: -90deg;
+    :where(.mb-menu .mb-label) {
+        position: relative;
+        overflow-wrap: anywhere;
     }
 
-    :where(.mb-menu--dropdown:dir(rtl) .mb-submenu .mb-chevron) {
-        rotate: 90deg;
+    :where(.mb-menu .mb-icon) {
+        display: inline-flex;
+        flex-shrink: 0;
     }
 
-    /* Not enough room: flip to the inline start. Set by the script. */
-    :where(.mb-menu--dropdown .mb-flip > .mb-submenu) {
-        inset-inline-start: auto;
-        inset-inline-end: 0;
+    :where(.mb-menu .mb-icon-svg) {
+        width: 1.25em;
+        height: 1.25em;
     }
 
-    :where(.mb-menu--dropdown .mb-submenu .mb-flip > .mb-submenu) {
-        inset-inline-end: 100%;
+    :where(.mb-menu .mb-toggle) {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        padding: 0.25rem;
+        border: 0;
+        border-radius: var(--mb-radius);
+        background: none;
+        color: inherit;
+        cursor: pointer;
     }
 
-    :where(.mb-menu--dropdown .mb-submenu .mb-flip > .mb-row .mb-chevron) {
-        rotate: 90deg;
+    :where(.mb-menu .mb-chevron) {
+        width: 1rem;
+        height: 1rem;
+        transition: rotate 150ms;
     }
 
-    :where(.mb-menu--dropdown:dir(rtl) .mb-submenu .mb-flip > .mb-row .mb-chevron) {
-        rotate: -90deg;
+    :where(.mb-menu .mb-entry[data-open] > .mb-row .mb-chevron) {
+        rotate: 180deg;
     }
-}
 
-@media (min-width: 48rem) and (hover: hover) {
-    :where(.mb-menu--dropdown .mb-has-children:hover > .mb-submenu),
-    :where(.mb-menu--dropdown .mb-has-children:focus-within > .mb-submenu) {
+    /* Submenus: collapsed accordions by default (small screens, tree variant). */
+
+    :where(.mb-menu .mb-submenu) {
+        display: none;
+        padding-inline-start: var(--mb-submenu-indent);
+    }
+
+    :where(.mb-menu .mb-entry[data-open] > .mb-submenu) {
         display: block;
+    }
+
+    /* Badges: start and end follow the document direction, top sits on the end edge of the label. */
+
+    :where(.mb-menu .mb-badge) {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        padding-inline: 0.45em;
+        border-radius: 999px;
+        background: var(--mb-badge-background);
+        color: var(--mb-badge-color);
+        font-size: 0.7em;
+        font-weight: 600;
+        line-height: 1.6;
+        white-space: nowrap;
+    }
+
+    :where(.mb-menu .mb-badge--top) {
+        position: absolute;
+        inset-block-end: calc(100% - 0.4em);
+        inset-inline-end: -0.9em;
+        pointer-events: none;
+    }
+
+    :where(.mb-menu .mb-item:has(.mb-badge--top)) {
+        padding-block-start: 0.85rem;
+        padding-inline-end: 1.25rem;
+    }
+
+    :where(.mb-menu .mb-badge[data-color='primary']) { --mb-badge-background: #dbeafe; --mb-badge-color: #1e40af; }
+    :where(.mb-menu .mb-badge[data-color='info']) { --mb-badge-background: #e0f2fe; --mb-badge-color: #075985; }
+    :where(.mb-menu .mb-badge[data-color='success']) { --mb-badge-background: #dcfce7; --mb-badge-color: #166534; }
+    :where(.mb-menu .mb-badge[data-color='warning']) { --mb-badge-background: #fef3c7; --mb-badge-color: #92400e; }
+    :where(.mb-menu .mb-badge[data-color='danger']) { --mb-badge-background: #fee2e2; --mb-badge-color: #991b1b; }
+
+    /* Columns (footer): root items become columns, children are always shown. */
+
+    :where(.mb-menu--columns > .mb-root) {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 1.5rem;
+    }
+
+    :where(.mb-menu--columns .mb-submenu) {
+        display: block;
+        padding-inline-start: 0;
+    }
+
+    :where(.mb-menu--columns > .mb-root > .mb-entry > .mb-row > .mb-item) {
+        font-weight: 600;
+    }
+
+    /* Dropdown (header / navbar) on wide screens. */
+
+    @media (min-width: 48rem) {
+        :where(.mb-menu--dropdown > .mb-root) {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--mb-gap);
+        }
+
+        :where(.mb-menu--dropdown .mb-submenu) {
+            position: absolute;
+            z-index: 50;
+            inset-block-start: 100%;
+            inset-inline-start: 0;
+            min-width: var(--mb-submenu-min-width);
+            max-width: min(20rem, calc(100vw - 1rem));
+            padding: 0.375rem;
+            border-radius: var(--mb-radius);
+            background: var(--mb-submenu-background);
+            box-shadow: var(--mb-submenu-shadow);
+        }
+
+        /* Nested submenus open towards the inline end: right in LTR, left in RTL. */
+        :where(.mb-menu--dropdown .mb-submenu .mb-submenu) {
+            inset-block-start: -0.375rem;
+            inset-inline-start: 100%;
+        }
+
+        :where(.mb-menu--dropdown .mb-submenu .mb-row) {
+            justify-content: space-between;
+        }
+
+        :where(.mb-menu--dropdown .mb-submenu .mb-item) {
+            flex: 1;
+        }
+
+        :where(.mb-menu--dropdown .mb-submenu .mb-chevron) {
+            rotate: -90deg;
+        }
+
+        :where(.mb-menu--dropdown:dir(rtl) .mb-submenu .mb-chevron) {
+            rotate: 90deg;
+        }
+
+        /* Not enough room: flip to the inline start. Set by the script. */
+        :where(.mb-menu--dropdown .mb-flip > .mb-submenu) {
+            inset-inline-start: auto;
+            inset-inline-end: 0;
+        }
+
+        :where(.mb-menu--dropdown .mb-submenu .mb-flip > .mb-submenu) {
+            inset-inline-end: 100%;
+        }
+
+        :where(.mb-menu--dropdown .mb-submenu .mb-flip > .mb-row .mb-chevron) {
+            rotate: 90deg;
+        }
+
+        :where(.mb-menu--dropdown:dir(rtl) .mb-submenu .mb-flip > .mb-row .mb-chevron) {
+            rotate: -90deg;
+        }
+    }
+
+    @media (min-width: 48rem) and (hover: hover) {
+        :where(.mb-menu--dropdown .mb-has-children:hover > .mb-submenu),
+        :where(.mb-menu--dropdown .mb-has-children:focus-within > .mb-submenu) {
+            display: block;
+        }
     }
 }

@@ -376,29 +376,63 @@ describe('rendering options', function (): void {
             ->assertHasActionErrors(['data.attributes']);
     });
 
-    it('creates buttons without a URL', function (): void {
+    it('offers heading, link and button when creating an item', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->assertFormFieldExists('type', fn ($field): bool => array_keys($field->getOptions()) === ['heading', 'link', 'button']);
+    });
+
+    it('creates buttons with color, size and attributes', function (): void {
         livewire(ManageMenu::class, ['placement' => 'header'])
             ->callAction('createItem', data: [
-                'type' => 'link',
+                'type' => 'button',
                 'label' => 'Login',
-                'data' => ['render_as' => 'button', 'link_type' => 'url', 'url' => '', 'attributes' => ['data-modal' => 'login']],
+                'color' => 'success',
+                'data' => [
+                    'size' => 'lg',
+                    'outlined' => true,
+                    'icon_position' => 'after',
+                    'attributes' => ['data-modal' => 'login', 'x-on:click' => "\$dispatch('open-login')"],
+                ],
             ])
             ->assertHasNoActionErrors()
             ->callAction('save');
 
         $login = Menu::build('header')->last();
 
-        expect($login->isButton())->toBeTrue()
-            ->and($login->attributes)->toBe(['data-modal' => 'login']);
+        expect($login->type)->toBe('button')
+            ->and($login->isButton())->toBeTrue()
+            ->and($login->url)->toBeNull()
+            ->and($login->color)->toBe('success')
+            ->and($login->buttonOption('size'))->toBe('lg')
+            ->and($login->buttonOption('outlined'))->toBeTrue()
+            ->and($login->buttonOption('icon_position'))->toBe('after')
+            ->and($login->attributes)->toBe(['data-modal' => 'login', 'x-on:click' => "\$dispatch('open-login')"]);
     });
 
-    it('hides the link target fields for buttons', function (): void {
+    it('creates buttons that link somewhere', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: ['type' => 'button', 'label' => 'Sign up', 'data' => ['url' => '/register']])
+            ->assertHasNoActionErrors()
+            ->callAction('save');
+
+        expect(Menu::build('header')->last()->url)->toBe('/register');
+    });
+
+    it('shows the attribute editor for every item type', function (string $type): void {
         livewire(ManageMenu::class, ['placement' => 'header'])
             ->mountAction('createItem')
+            ->fillForm(['type' => $type])
+            ->assertFormFieldVisible('item-fields.data.attributes');
+    })->with(['heading', 'link', 'button']);
+
+    it('shows the button settings only for buttons', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->fillForm(['type' => 'button'])
+            ->assertFormFieldVisible('item-fields.data.size')
             ->fillForm(['type' => 'link'])
-            ->assertFormFieldVisible('item-fields.data.url')
-            ->fillForm(['data' => ['render_as' => 'button']])
-            ->assertFormFieldHidden('item-fields.data.url');
+            ->assertFormFieldDoesNotExist('item-fields.data.size');
     });
 });
 
