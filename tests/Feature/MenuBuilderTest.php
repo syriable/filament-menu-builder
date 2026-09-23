@@ -277,3 +277,16 @@ describe('label translations', function (): void {
             ->and(Menu::build('header', locale: 'fr')->first()->label)->toBe('Pricing');
     });
 });
+
+it('resolves the text style of items', function (): void {
+    Menu::sync('header', [
+        linkItem('Pricing', '/pricing', ['data' => ['link_type' => 'url', 'url' => '/pricing', 'text_style' => ['weight' => 'bold', 'hover_color' => '#f59e0b']]]),
+        linkItem('About', '/about'),
+    ]);
+
+    [$pricing, $about] = Menu::build('header')->all();
+
+    expect($pricing->textStyle->toArray())->toBe(['weight' => 'bold', 'hover_color' => '#f59e0b'])
+        ->and($pricing->toArray()['text_style'])->toBe(['weight' => 'bold', 'hover_color' => '#f59e0b'])
+        ->and($about->textStyle->isEmpty())->toBeTrue();
+});

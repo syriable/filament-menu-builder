@@ -102,6 +102,50 @@ return [
         'attribute_target' => 'Apply attributes to',
         'visibility' => 'Visible to',
         'is_active' => 'Active',
+        'appearance_help' => 'Icon, Filament color and badge.',
+        'text_style' => 'Text',
+        'text_style_help' => 'Weight, size, underline, letter case, cursor and hover color.',
+        'font_weight' => 'Weight',
+        'text_size' => 'Size',
+        'italic' => 'Italic',
+        'underline' => 'Underline',
+        'text_transform' => 'Letter case',
+        'cursor' => 'Cursor',
+        'hover_color' => 'Hover color',
+        'hover_color_help' => 'The text color on hover, e.g. #f59e0b.',
+        'default' => 'Default',
+    ],
+
+    'text' => [
+        'weights' => [
+            'light' => 'Light',
+            'normal' => 'Normal',
+            'medium' => 'Medium',
+            'semibold' => 'Semibold',
+            'bold' => 'Bold',
+            'extrabold' => 'Extra bold',
+        ],
+        'sizes' => [
+            'xs' => 'Extra small',
+            'sm' => 'Small',
+            'base' => 'Normal',
+            'lg' => 'Large',
+            'xl' => 'Extra large',
+        ],
+        'underlines' => [
+            'always' => 'Always',
+            'hover' => 'On hover',
+            'none' => 'Never',
+        ],
+        'transforms' => [
+            'uppercase' => 'UPPERCASE',
+            'lowercase' => 'lowercase',
+            'capitalize' => 'Capitalize Words',
+        ],
+        'cursors' => [
+            'pointer' => 'Hand (pointer)',
+            'default' => 'Arrow',
+        ],
     ],
 
     'actions' => [
@@ -162,6 +206,7 @@ return [
         'missing_item' => 'The menu item ":item" no longer exists.',
         'missing_parent' => 'The parent item does not exist in this menu.',
         'attribute_name' => '":name" is not a valid HTML attribute name.',
+        'color' => 'Enter a color such as #f59e0b, rgb(245 158 11) or oklch(0.77 0.16 70).',
         'locale' => '":locale" is not a valid locale.',
         'attribute_value' => 'The value of the ":name" attribute must be plain text.',
         'route_missing' => 'The route ":route" does not exist.',

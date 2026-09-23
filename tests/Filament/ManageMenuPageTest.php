@@ -553,6 +553,95 @@ describe('item form', function (): void {
         expect($page->getAction('createItem')->isModalSlideOver())->toBeFalse();
     });
 
+    it('reads the display mode and width from the config', function (): void {
+        config()->set('menu-builder.item_form', ['slide_over' => false, 'width' => '4xl']);
+
+        $page = livewire(ManageMenu::class, ['placement' => 'header'])->instance();
+
+        expect($page->getAction('createItem')->isModalSlideOver())->toBeFalse()
+            ->and($page->getAction('createItem')->getModalWidth())->toBe(Filament\Support\Enums\Width::FourExtraLarge)
+            ->and($page->getAction('editItem')->getModalWidth())->toBe(Filament\Support\Enums\Width::FourExtraLarge);
+    });
+
+    it('uses a 2xl slide-over for missing or invalid config values', function (): void {
+        config()->set('menu-builder.item_form', ['width' => 'huge']);
+
+        $page = livewire(ManageMenu::class, ['placement' => 'header'])->instance();
+
+        expect($page->getAction('createItem')->isModalSlideOver())->toBeTrue()
+            ->and($page->getAction('createItem')->getModalWidth())->toBe(Filament\Support\Enums\Width::TwoExtraLarge);
+    });
+
+    it('lets the plugin override the config', function (): void {
+        config()->set('menu-builder.item_form', ['slide_over' => true, 'width' => 'md']);
+        filament()->getPanel('admin')->getPlugin('menu-builder')->slideOver(false)->modalWidth(Filament\Support\Enums\Width::SevenExtraLarge);
+
+        $page = livewire(ManageMenu::class, ['placement' => 'header'])->instance();
+
+        expect($page->getAction('createItem')->isModalSlideOver())->toBeFalse()
+            ->and($page->getAction('createItem')->getModalWidth())->toBe(Filament\Support\Enums\Width::SevenExtraLarge);
+    });
+
+    it('reads the translation locales from the config', function (): void {
+        config()->set('menu-builder.locales', ['ar', 'fr' => 'Français']);
+
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->assertFormFieldVisible('item-fields.data.label_translations.ar')
+            ->assertFormFieldVisible('item-fields.data.label_translations.fr');
+    });
+
+    it('prefers the locales of the plugin', function (): void {
+        config()->set('menu-builder.locales', ['fr']);
+        filament()->getPanel('admin')->getPlugin('menu-builder')->locales(['de']);
+
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->assertFormFieldVisible('item-fields.data.label_translations.de')
+            ->assertFormFieldDoesNotExist('item-fields.data.label_translations.fr');
+    });
+
+    it('stores the text style from the form', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->assertFormFieldVisible('item-fields.data.text_style.weight')
+            ->assertFormFieldVisible('item-fields.data.text_style.hover_color')
+            ->callMountedAction();
+
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Pricing',
+                'data' => ['link_type' => 'url', 'url' => '/pricing', 'text_style' => [
+                    'weight' => 'semibold',
+                    'underline' => 'none',
+                    'cursor' => 'pointer',
+                    'italic' => true,
+                    'hover_color' => '#f59e0b',
+                ]],
+            ])
+            ->assertHasNoActionErrors()
+            ->callAction('save');
+
+        expect(Menu::build('header')->last()->textStyle->toArray())->toBe([
+            'weight' => 'semibold',
+            'italic' => true,
+            'underline' => 'none',
+            'cursor' => 'pointer',
+            'hover_color' => '#f59e0b',
+        ]);
+    });
+
+    it('rejects invalid hover colors', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Pricing',
+                'data' => ['link_type' => 'url', 'url' => '/pricing', 'text_style' => ['hover_color' => 'red;}']],
+            ])
+            ->assertHasActionErrors(['data.text_style.hover_color']);
+    });
+
     it('has no translation fields without locales', function (): void {
         livewire(ManageMenu::class, ['placement' => 'header'])
             ->mountAction('createItem')

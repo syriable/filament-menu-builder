@@ -59,11 +59,27 @@ public function panel(Panel $panel): Panel
                 ->navigationIcon('heroicon-o-bars-3') // optional
                 ->navigationLabel('Menus')     // optional
                 ->navigation(true)             // set to false to hide the navigation item
-                ->locales(['en' => 'English', 'ar' => 'العربية']) // optional, see "Translating labels"
-                ->slideOver(true),             // the item form opens in a slide-over (default) or, with false, a modal
+                ->locales(['en', 'ar'])        // optional, overrides config('menu-builder.locales')
+                ->slideOver(true)              // optional, overrides config('menu-builder.item_form.slide_over')
+                ->modalWidth('2xl'),           // optional, overrides config('menu-builder.item_form.width')
         );
 }
 ```
+
+### The item form
+
+The form that creates and edits items opens as a slide-over or a centered modal. Set this and its width in `config/menu-builder.php`:
+
+```php
+'item_form' => [
+    'slide_over' => true, // false: a centered modal
+    'width' => '2xl',     // xs, sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl, full or screen
+],
+```
+
+The plugin methods `slideOver()` and `modalWidth()` (a string or `Filament\Support\Enums\Width`) override these values for one panel.
+
+The form puts the essentials first: type, label, the fields of the type (URL, route, button settings), visibility and status. Collapsible sections below hold the secondary options: **Label translations**, **Appearance** (icon, color, badge), **Text** and **HTML attributes**. A section starts collapsed unless the item already has values in it, and fields sit two per row wherever they fit. Fields of a [custom item type](#custom-item-types) go in a two-column grid, so call `->columnSpanFull()` on the wide ones.
 
 If you deploy without running `composer install` hooks, publish the plugin's assets:
 
@@ -428,6 +444,22 @@ Links and headings look like plain links: the color of their parent, an underlin
 
 Every item element also has the classes `mb-item`, `mb-item-{link|heading|button}` and, when it is the current page or an ancestor of it, `mb-active`.
 
+### Text options per item
+
+The **Text** section of the item form styles one item without any CSS:
+
+| Option | Values | Class |
+| --- | --- | --- |
+| Weight | light, normal, medium, semibold, bold, extra bold | `mb-weight-*` |
+| Size | extra small, small, normal, large, extra large | `mb-text-{xs,sm,base,lg,xl}` |
+| Italic | on or off | `mb-italic` |
+| Underline | always, on hover, never | `mb-underline-{always,hover,none}` |
+| Letter case | UPPERCASE, lowercase, Capitalize | `mb-transform-*` |
+| Cursor | hand (pointer), arrow | `mb-cursor-{pointer,default}` |
+| Hover color | any hex, `rgb()`, `hsl()` or `oklch()` color | `mb-hover-color` + `--mb-item-hover-color` |
+
+"Default" keeps the look of the item type. Links underline on hover and headings don't. The options are stored in `data.text_style`, validated on save, and ignored when invalid, so they can't inject CSS. They apply to the item element everywhere: top level, dropdown entries, triggers and buttons. `ResolvedMenuItem::$textStyle` exposes them to custom components, and `itemAttributes()` already includes the classes and the style.
+
 ### Styling
 
 The components carry Filament's classes (`fi-link`, `fi-btn`, `fi-dropdown-panel`, `fi-badge`, …), so your Filament theme applies to them. The package's layout CSS sits in the `base` cascade layer inside `:where()`; the plain link look sits in the `components` layer. Tailwind utilities (the `utilities` layer) and any class in your theme override both.
@@ -556,12 +588,17 @@ A badge (text plus an optional color) can sit in three logical positions, chosen
 
 ## Translating labels
 
-Give the plugin the locales of your site and the item form shows a label field for each one:
+List the locales of your site in `config/menu-builder.php` and the item form shows a label field for each one:
 
 ```php
-MenuBuilderPlugin::make()->locales(['en' => 'English', 'ar' => 'العربية']);
-// or simply ->locales(['en', 'ar'])
+'locales' => [
+    'en' => 'English',
+    'ar' => 'العربية',
+],
+// or simply: 'locales' => ['en', 'ar'],
 ```
+
+`MenuBuilderPlugin::make()->locales([...])` overrides the config for one panel.
 
 The main **Label** is the default. A locale left empty uses it. The translations are stored in the item's `data` (`data.label_translations`), so no migration is needed.
 

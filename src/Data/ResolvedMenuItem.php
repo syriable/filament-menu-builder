@@ -11,6 +11,7 @@ use Syriable\Filament\Plugins\MenuBuilder\Enums\AttributeTarget;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Support\HtmlAttributes;
+use Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle;
 
 /**
  * A frontend-ready menu item: visible, with its label and URL resolved.
@@ -43,6 +44,7 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
         public array $attributes = [],
         public AttributeTarget $attributeTarget = AttributeTarget::Item,
         public BadgePosition $badgePosition = BadgePosition::End,
+        public TextStyle $textStyle = new TextStyle,
     ) {}
 
     public function hasChildren(): bool
@@ -94,11 +96,14 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
     }
 
     /**
-     * Escaped attributes for the item's own element (<a>, <button>, heading).
+     * Escaped attributes for the item's own element (<a>, <button>, heading),
+     * including the classes and styles of its text options.
      */
     public function itemAttributes(): ComponentAttributeBag
     {
-        return HtmlAttributes::bag($this->attributeTarget === AttributeTarget::Item ? $this->attributes : []);
+        return HtmlAttributes::bag($this->attributeTarget === AttributeTarget::Item ? $this->attributes : [])
+            ->class($this->textStyle->classes())
+            ->style($this->textStyle->styles());
     }
 
     /**
@@ -140,6 +145,7 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
             'attributes' => $this->attributes,
             'attribute_target' => $this->attributeTarget->value,
             'badge_position' => $this->badgePosition->value,
+            'text_style' => $this->textStyle->toArray(),
             'children' => array_map(static fn (self $child): array => $child->toArray(), $this->children),
         ];
     }

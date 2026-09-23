@@ -18,6 +18,15 @@ trait InteractsWithMenuPlugin
         return $plugin instanceof MenuBuilderPlugin ? $plugin : null;
     }
 
+    /**
+     * The plugin of the current panel, or one configured from the config file
+     * when the page is used without it.
+     */
+    protected static function settings(): MenuBuilderPlugin
+    {
+        return static::plugin() ?? MenuBuilderPlugin::make();
+    }
+
     protected static function registry(): MenuRegistry
     {
         return app(MenuRegistry::class);

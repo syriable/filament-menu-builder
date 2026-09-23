@@ -50,6 +50,40 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Label translations
+    |--------------------------------------------------------------------------
+    |
+    | The locales item labels can be translated into. The item form shows one
+    | label field per locale; the frontend uses the label of the current
+    | locale and falls back to the default label. Use a list (['en', 'ar'])
+    | or locale => name pairs. MenuBuilderPlugin::locales() overrides this.
+    |
+    */
+
+    'locales' => [
+        // 'en' => 'English',
+        // 'ar' => 'العربية',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Item form
+    |--------------------------------------------------------------------------
+    |
+    | How the form to create and edit items opens: as a slide-over or as a
+    | centered modal, and how wide it is. Widths: xs, sm, md, lg, xl, 2xl,
+    | 3xl, 4xl, 5xl, 6xl, 7xl, full or screen. The plugin methods
+    | slideOver() and modalWidth() override these values per panel.
+    |
+    */
+
+    'item_form' => [
+        'slide_over' => true,
+        'width' => '2xl',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Cache
     |--------------------------------------------------------------------------
     |
