@@ -176,6 +176,8 @@ final readonly class MenuTreeGuard
             MenuNode::DATA_ATTRIBUTE_TARGET => ['nullable', Rule::enum(AttributeTarget::class)],
             MenuNode::DATA_BADGE_POSITION => ['nullable', Rule::enum(BadgePosition::class)],
             MenuNode::DATA_ATTRIBUTES => ['nullable', 'array', $this->htmlAttributesRule()],
+            MenuNode::DATA_LABEL_TRANSLATIONS => ['nullable', 'array', $this->localeKeysRule()],
+            MenuNode::DATA_LABEL_TRANSLATIONS.'.*' => ['nullable', 'string', 'max:255'],
         ]);
 
         foreach ($rendering->errors()->messages() as $field => $messages) {
@@ -219,6 +221,17 @@ final readonly class MenuTreeGuard
 
                 if (! (is_scalar($attributeValue) || $attributeValue === null) || mb_strlen((string) $attributeValue) > 2000) {
                     $fail(__('menu-builder::menu-builder.validation.attribute_value', ['name' => (string) $name]));
+                }
+            }
+        };
+    }
+
+    private function localeKeysRule(): Closure
+    {
+        return static function (string $attribute, mixed $value, Closure $fail): void {
+            foreach (is_array($value) ? array_keys($value) : [] as $locale) {
+                if (! is_string($locale) || preg_match('/^[A-Za-z]{2,3}([_-][A-Za-z0-9]{2,8})*$/', $locale) !== 1) {
+                    $fail(__('menu-builder::menu-builder.validation.locale', ['locale' => (string) $locale]));
                 }
             }
         };

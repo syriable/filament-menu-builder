@@ -74,9 +74,9 @@ final readonly class MenuManager
      *
      * @return Collection<int, ResolvedMenuItem>
      */
-    public function build(string $placement, ?Authenticatable $user = null, ?string $currentUrl = null): Collection
+    public function build(string $placement, ?Authenticatable $user = null, ?string $currentUrl = null, ?string $locale = null): Collection
     {
-        return app(MenuBuilder::class)->build($placement, $user, $currentUrl);
+        return app(MenuBuilder::class)->build($placement, $user, $currentUrl, $locale);
     }
 
     /**

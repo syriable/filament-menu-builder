@@ -58,7 +58,9 @@ public function panel(Panel $panel): Panel
                 ->navigationSort(10)           // optional
                 ->navigationIcon('heroicon-o-bars-3') // optional
                 ->navigationLabel('Menus')     // optional
-                ->navigation(true),            // set to false to hide the navigation item
+                ->navigation(true)             // set to false to hide the navigation item
+                ->locales(['en' => 'English', 'ar' => 'العربية']) // optional, see "Translating labels"
+                ->slideOver(true),             // the item form opens in a slide-over (default) or, with false, a modal
         );
 }
 ```
@@ -231,6 +233,7 @@ use Syriable\Filament\Plugins\MenuBuilder\Facades\Menu;
 $items = Menu::build('header');                  // current user and current URL
 $items = Menu::build('header', $user);           // a specific user
 $items = Menu::build('header', currentUrl: $url);
+$items = Menu::build('header', locale: 'ar');   // labels in another locale (default: app()->getLocale())
 ```
 
 `build()` returns a `Collection` of `ResolvedMenuItem` objects. Each item is already filtered, labelled and resolved:
@@ -268,6 +271,9 @@ The package ships a small set of anonymous Blade components built on Filament's 
 | `item-component` | `menu-builder::item` | component that renders one item's element |
 | `heading-tag` | `span` | element used for headings |
 | `label` | – | `aria-label` of the `<nav>` |
+| `item-class` | – | classes added to every item element (link, heading, button, dropdown entry) |
+| `active-class` | – | classes added to the current item and its ancestors |
+| `dropdown-class` | – | classes added to the content of every dropdown panel |
 | `with-assets` | config | print the layout CSS and accordion script (once per page) |
 
 Thin wrappers exist for common placements. Each one is `menu` with a variant and a class, and accepts the same props:
@@ -293,7 +299,7 @@ The renderer picks the component from the item type, its position and whether it
 
 Other rules the renderer follows:
 
-- **Colors.** The item's color is passed to the component. Without one, links are `primary` when they are the current page or on the active trail and `gray` otherwise; buttons default to `primary`.
+- **Colors.** Links, headings and dropdown triggers without a color of their own inherit the text color of the menu (see [Colors and hover](#colors-and-hover)), so a menu in a dark header is white when the header is. An item with a color (chosen in the form) uses that Filament color. Buttons keep Filament's button look and default to `primary`.
 - **Icons.** An icon that is not installed is skipped instead of throwing, so a removed icon set never breaks the page.
 - **Parent links.** A link with children becomes a dropdown trigger. Its own page is listed as the first entry of the panel so it stays reachable.
 - **Accessibility.** Current pages get `aria-current="page"`, new tabs `target="_blank" rel="noopener noreferrer"`, and accordion toggles get `aria-expanded`, `aria-controls` and a translated label.
@@ -376,16 +382,55 @@ Direction comes from the `direction` prop, or from Filament's translation for th
 <x-menu-builder::header :items="Menu::build('header')" direction="rtl" />
 ```
 
-### Styling
+### Colors and hover
 
-The components carry Filament's classes (`fi-link`, `fi-btn`, `fi-dropdown-panel`, `fi-badge`, …), so your Filament theme applies to them. The package's layout CSS sits in the `base` cascade layer and every selector is wrapped in `:where()`, so any Tailwind utility or class in your theme overrides it. Two custom properties are available:
+Links and headings look like plain links: the color of their parent, an underline on hover, and no hover background, including inside dropdown panels. Change the colors in whichever way suits your project:
+
+**1. Set the text color on the menu or any ancestor.** Items inherit it.
+
+```blade
+<header class="bg-gray-900 text-white">
+    <x-menu-builder::header :items="Menu::build('header')" />
+</header>
+```
+
+**2. Add classes to the items.** Tailwind utilities always win over the package styles.
+
+```blade
+<x-menu-builder::header
+    :items="Menu::build('header')"
+    item-class="text-white hover:text-amber-300"
+    active-class="text-amber-400 font-semibold"
+    dropdown-class="bg-gray-900 text-gray-100"
+/>
+```
+
+**3. Use the custom properties**, for example in your CSS or a `style` attribute:
+
+| Property | Default | |
+| --- | --- | --- |
+| `--mb-color` | inherited | links and headings |
+| `--mb-hover-color` | `--mb-color` | links on hover and focus |
+| `--mb-active-color` | `--mb-color` | the current page and its ancestors |
+| `--mb-dropdown-color` | Filament gray | entries in dropdown panels |
+| `--mb-dropdown-hover-color` | inherited | dropdown entries on hover |
+| `--mb-dropdown-active-color` | inherited | the current page in dropdown panels |
+| `--mb-gap` | `1.25rem` | space between root items |
+| `--mb-submenu-indent` | `1rem` | accordion indentation |
 
 ```css
 .site-header .mb-menu {
-    --mb-gap: 2rem;              /* space between root items */
-    --mb-submenu-indent: 1.5rem; /* accordion indentation */
+    --mb-color: white;
+    --mb-hover-color: var(--color-amber-300);
+    --mb-active-color: var(--color-amber-400);
 }
 ```
+
+Every item element also has the classes `mb-item`, `mb-item-{link|heading|button}` and, when it is the current page or an ancestor of it, `mb-active`.
+
+### Styling
+
+The components carry Filament's classes (`fi-link`, `fi-btn`, `fi-dropdown-panel`, `fi-badge`, …), so your Filament theme applies to them. The package's layout CSS sits in the `base` cascade layer inside `:where()`; the plain link look sits in the `components` layer. Tailwind utilities (the `utilities` layer) and any class in your theme override both.
 
 ### Placement-specific components
 
@@ -508,6 +553,34 @@ A badge (text plus an optional color) can sit in three logical positions, chosen
 | `start` | before the label: left in LTR, right in RTL |
 | `end` (default) | after the label: right in LTR, left in RTL |
 | `top` | Filament's corner badge of the link or button component |
+
+## Translating labels
+
+Give the plugin the locales of your site and the item form shows a label field for each one:
+
+```php
+MenuBuilderPlugin::make()->locales(['en' => 'English', 'ar' => 'العربية']);
+// or simply ->locales(['en', 'ar'])
+```
+
+The main **Label** is the default. A locale left empty uses it. The translations are stored in the item's `data` (`data.label_translations`), so no migration is needed.
+
+On the frontend, `Menu::build()` uses the label of `app()->getLocale()`, falling back from a regional locale to its language (`ar_SA` → `ar`) and then to the default label. Pass `locale:` to build another language:
+
+```php
+Menu::build('header');               // current locale
+Menu::build('header', locale: 'ar'); // Arabic labels
+```
+
+When seeding:
+
+```php
+['type' => 'link', 'label' => 'Pricing', 'data' => [
+    'link_type' => 'url',
+    'url' => '/pricing',
+    'label_translations' => ['ar' => 'الأسعار', 'de' => 'Preise'],
+]]
+```
 
 ## Editing the tree
 

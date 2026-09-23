@@ -5,6 +5,9 @@
     'headingTag' => 'span',
     'label' => null,
     'direction' => null,
+    'itemClass' => null,
+    'activeClass' => null,
+    'dropdownClass' => null,
     'withAssets' => null,
 ])
 
@@ -15,6 +18,9 @@
     :heading-tag="$headingTag"
     :label="$label"
     :direction="$direction"
+    :item-class="$itemClass"
+    :active-class="$activeClass"
+    :dropdown-class="$dropdownClass"
     :with-assets="$withAssets"
     {{ $attributes->class(['mb-menu--header']) }}
 />

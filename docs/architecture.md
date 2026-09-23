@@ -175,9 +175,14 @@ The renderer is a thin layer of anonymous components over Filament's UI componen
 - **Why Filament components.** They bring consistent colors, sizes, dark mode and theming, plus a tested dropdown (Alpine + Floating UI with flip and shift), so the package no longer needs its own positioning and flip logic. The cost is that a frontend must load Filament's CSS and scripts (documented in the README).
 - **Icons.** Filament components throw for unknown icons. `Support\Icons::safe()` checks the icon once per request and drops unknown ones, so a menu never breaks the page.
 - **Attributes.** Item attributes reach Filament components through `:attributes="$item->itemAttributes()"`. That bag is already escaped and Filament prints it verbatim, so values are escaped exactly once.
-- **CSS** (`resources/dist/frontend/menu.css`) only does layout (row, accordion, columns), with logical properties, inside `:where()` and in the `base` cascade layer so Filament component styles and Tailwind utilities win.
+- **CSS** (`resources/dist/frontend/menu.css`) does layout (row, accordion, columns) in the `base` layer inside `:where()`. It also gives links, headings and dropdown entries a plain look in the `components` layer: no hover backgrounds, and the menu's text color (`--mb-*` custom properties) unless the item has a color. These rules need more specificity than Filament's (`.mb-menu .mb-item.fi-link:not(.fi-color)`) because they share its layer, and they only win because they come later. Tailwind utilities in the `utilities` layer override all of them, which is how `item-class`, `active-class` and `dropdown-class` work. Those props reach the inner components through `@aware`, so they aren't passed down through every level.
+- **Editor CSS** (`resources/dist/menu-builder.css`) is registered as a Filament asset, so `@filamentStyles` also prints it on public pages. Every rule is therefore scoped to `.mb-editor`, the root class of the editor pages. Otherwise editor classes such as `.mb-row` and `.mb-label` would style frontend menus. A test enforces this.
 - **JS** (`resources/dist/frontend/menu.js`, no dependencies) only handles the accordion toggles (`data-open`, `aria-expanded`) and `Escape`. Dropdown behavior is Filament's.
 - Both files are printed inline once per page (`@once`, with the Vite CSP nonce when set) and can be switched off with `menu-builder.frontend.assets`.
+
+## Label translations
+
+Translations live in `data.label_translations` (locale => label), next to the other shared rendering keys, so they need no migration and they travel with drafts. `MenuTreeGuard` validates the locale keys and the string length. `MenuNode::translatedLabel()` looks up the exact locale, then its language. `MenuBuilder` prefers that over `MenuItemType::resolveLabel()`, which keeps the item type API unchanged. The locales offered in the form come from `MenuBuilderPlugin::locales()`: only the editor needs them, and the frontend reads whatever translations are stored.
 
 ## Authorization
 

@@ -42,6 +42,8 @@ final readonly class MenuNode implements Arrayable
 
     public const string DATA_BADGE_POSITION = 'badge_position';
 
+    public const string DATA_LABEL_TRANSLATIONS = 'label_translations';
+
     /**
      * @param  array<string, mixed>  $data  Type specific data (url, route, record id, ...) and rendering options.
      */
@@ -160,6 +162,29 @@ final readonly class MenuNode implements Arrayable
         $value = $this->data[self::DATA_BADGE_POSITION] ?? null;
 
         return (is_string($value) ? BadgePosition::tryFrom($value) : null) ?? BadgePosition::End;
+    }
+
+    /**
+     * The label translated into the given locale (`ar_SA` falls back to
+     * `ar`), or null when there is no translation.
+     */
+    public function translatedLabel(string $locale): ?string
+    {
+        $translations = $this->data[self::DATA_LABEL_TRANSLATIONS] ?? null;
+
+        if (! is_array($translations)) {
+            return null;
+        }
+
+        foreach (array_unique([$locale, strtok($locale, '_-')]) as $candidate) {
+            $label = $translations[$candidate] ?? null;
+
+            if (is_string($label) && trim($label) !== '') {
+                return $label;
+            }
+        }
+
+        return null;
     }
 
     public function isNew(): bool

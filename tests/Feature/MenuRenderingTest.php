@@ -109,7 +109,7 @@ describe('root elements', function (): void {
         ]);
 
         expect(one($xpath, '//a[@href="/home"]')->getAttribute('aria-current'))->toBe('page')
-            ->and(one($xpath, '//a[@href="/home"]')->getAttribute('class'))->toContain('fi-color-primary')
+            ->and(one($xpath, '//a[@href="/home"]')->getAttribute('class'))->toContain('mb-active')->not->toContain('fi-color')
             ->and(one($xpath, '//a[@href="https://example.com"]')->getAttribute('target'))->toBe('_blank')
             ->and(one($xpath, '//a[@href="https://example.com"]')->getAttribute('rel'))->toBe('noopener noreferrer');
     });
@@ -432,6 +432,61 @@ describe('tree', function (): void {
     });
 });
 
+describe('colors and classes', function (): void {
+    it('lets links and headings inherit the color of the menu', function (): void {
+        $xpath = renderMenu([
+            resolved('Home', ['isCurrent' => true]),
+            resolved('About'),
+            resolved('Group', ['url' => null, 'renderAs' => RenderAs::Heading]),
+        ]);
+
+        expect($xpath->query('//*[contains(@class, "mb-item")][contains(@class, "fi-color")]')->length)->toBe(0);
+    });
+
+    it('keeps an explicit item color', function (): void {
+        expect(one(renderMenu([resolved('Sale', ['color' => 'danger'])]), '//a')->getAttribute('class'))->toContain('fi-color-danger');
+    });
+
+    it('adds item, active and dropdown classes', function (string $template): void {
+        $xpath = render($template, ['items' => [
+            resolved('Home', ['isCurrent' => true]),
+            resolved('Services', ['isActiveTrail' => true, 'url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+                resolved('Web', ['depth' => 2, 'isCurrent' => true]),
+                resolved('Design', ['depth' => 2]),
+            ]]),
+            resolved('About'),
+        ]]);
+
+        expect($xpath->query('//*[contains(@class, "text-white")]')->length)->toBe(5)
+            ->and($xpath->query('//*[contains(@class, "text-amber-300")]')->length)->toBe(3)
+            ->and(one($xpath, '//a[@href="/about"]')->getAttribute('class'))->toContain('text-white')->not->toContain('text-amber-300')
+            ->and(one($xpath, '//a[@href="/web"]')->getAttribute('class'))->toContain('text-amber-300')
+            ->and(one($xpath, '//div[contains(@class, "mb-panel")]')->getAttribute('class'))->toContain('bg-gray-900');
+    })->with([
+        'menu' => '<x-menu-builder::menu :items="$items" item-class="text-white" active-class="text-amber-300" dropdown-class="bg-gray-900" />',
+        'header' => '<x-menu-builder::header :items="$items" item-class="text-white" active-class="text-amber-300" dropdown-class="bg-gray-900" />',
+    ]);
+
+    it('adds the item classes in tree menus', function (): void {
+        $xpath = render('<x-menu-builder::sidebar :items="$items" item-class="nav-link" />', ['items' => [
+            resolved('Services', ['children' => [resolved('Web', ['depth' => 2])]]),
+        ]]);
+
+        expect($xpath->query('//a[contains(@class, "nav-link")]')->length)->toBe(2);
+    });
+
+    it('ships plain styles that Tailwind utilities override', function (): void {
+        $css = Syriable\Filament\Plugins\MenuBuilder\Support\FrontendAssets::css();
+
+        expect($css)->toContain('@layer components')
+            ->toContain('var(--mb-color, currentColor)')
+            ->toContain('var(--mb-active-color')
+            ->toContain('var(--mb-dropdown-color')
+            ->toMatch('/\.fi-dropdown-list-item[^{]*:hover[^{]*\{\s*background-color: transparent;/')
+            ->not->toContain('@layer utilities');
+    });
+});
+
 describe('filament buttons', function (): void {
     it('renders button items with the Filament button component', function (): void {
         $button = one(renderMenu([resolved('Login', [
@@ -555,4 +610,18 @@ describe('with the menu builder', function (): void {
             ->and(one($xpath, '//button[@data-modal="login"]')->getAttribute('type'))->toBe('button')
             ->and(one($xpath, '//div[@data-level="2"]//a[@href="/laravel"]')->getAttribute('class'))->toContain('fi-dropdown-list-item');
     });
+});
+
+it('scopes the editor stylesheet so it never styles frontend menus', function (): void {
+    $css = preg_replace('#/\*.*?\*/#s', '', (string) file_get_contents(__DIR__.'/../../resources/dist/menu-builder.css'));
+
+    preg_match_all('/([^{};]+)\{/', $css, $matches);
+
+    $selectors = collect($matches[1])
+        ->map(fn (string $selector): string => trim($selector))
+        ->reject(fn (string $selector): bool => str_starts_with($selector, '@'))
+        ->flatMap(fn (string $selector): array => array_map(trim(...), explode(',', $selector)));
+
+    expect($selectors)->not->toBeEmpty()
+        ->and($selectors->reject(fn (string $selector): bool => str_contains($selector, '.mb-editor'))->all())->toBe([]);
 });

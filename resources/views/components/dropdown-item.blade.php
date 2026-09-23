@@ -12,6 +12,8 @@
     'headingTag' => 'span',
 ])
 
+@aware(['itemClass' => null, 'activeClass' => null])
+
 @php
     use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
     use Syriable\Filament\Plugins\MenuBuilder\Support\Icons;
@@ -42,7 +44,7 @@
     <x-filament::dropdown.header
         :icon="$icon"
         :color="$item->color ?? 'gray'"
-        :attributes="$item->itemAttributes()->class(['mb-item', 'mb-item-heading'])"
+        :attributes="$item->itemAttributes()->class(['mb-item', 'mb-item-heading', $itemClass])"
     >{{ $label }}</x-filament::dropdown.header>
 @else
     <x-filament::dropdown.list.item
@@ -50,11 +52,17 @@
         :href="$item->url"
         :target="$item->openInNewTab ? '_blank' : null"
         :icon="$icon"
-        :color="$item->color ?? ($item->isCurrent ? 'primary' : 'gray')"
+        :color="$item->color ?? 'gray'"
         :badge="$badge"
         :badge-color="$item->badgeColor ?? 'primary'"
         :attributes="$item->itemAttributes()
-            ->class(['mb-item', 'mb-item-'.($item->isButton() ? 'button' : 'link')])
+            ->class([
+                'mb-item',
+                'mb-item-'.($item->isButton() ? 'button' : 'link'),
+                'mb-active' => $item->isCurrent,
+                $itemClass,
+                $item->isCurrent ? $activeClass : null,
+            ])
             ->merge(array_filter([
                 'aria-current' => $item->isCurrent ? 'page' : null,
                 'rel' => $item->openInNewTab && $item->url !== null ? 'noopener noreferrer' : null,

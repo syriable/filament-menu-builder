@@ -8,7 +8,7 @@
             </p>
         </x-filament::section>
     @else
-        <div class="mb-placements">
+        <div class="mb-editor mb-placements">
             @foreach ($placements as $entry)
                 <a href="{{ $entry['url'] }}" class="mb-placement-card" wire:key="placement-{{ $entry['placement']->getKey() }}">
                     <div class="mb-placement-card-header">
