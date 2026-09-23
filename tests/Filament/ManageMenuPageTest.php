@@ -59,6 +59,16 @@ it('renders the tree of the placement', function (): void {
         ->assertSee('Saved');
 });
 
+it('can be inspected without being mounted', function (): void {
+    // Filament Shield instantiates every page to read its title.
+    $page = new ManageMenu;
+
+    expect($page->getTitle())->toBe('Menu')
+        ->and($page->getSubheading())->toBeNull()
+        ->and($page->getBreadcrumbs())->toContain('Menu')
+        ->and($page->findPlacement())->toBeNull();
+});
+
 it('returns 404 for unknown placements', function (): void {
     $this->get(ManageMenu::getUrl(['placement' => 'nowhere']))->assertNotFound();
 });

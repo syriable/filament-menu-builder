@@ -79,16 +79,20 @@ class ManageMenu extends Page
         return static::canViewAnyPlacement();
     }
 
+    /**
+     * Tools such as Filament Shield read the title of pages that were never
+     * mounted, so the title must not require a placement.
+     */
     #[Override]
     public function getTitle(): string|Htmlable
     {
-        return $this->getPlacement()->getLabel();
+        return $this->findPlacement()?->getLabel() ?? $this->translate('navigation.menu');
     }
 
     #[Override]
     public function getSubheading(): string|Htmlable|null
     {
-        return $this->getPlacement()->getDescription();
+        return $this->findPlacement()?->getDescription();
     }
 
     /**
@@ -99,8 +103,15 @@ class ManageMenu extends Page
     {
         return [
             MenuPlacements::getUrl() => $this->translate('navigation.label'),
-            $this->getPlacement()->getLabel(),
+            $this->getTitle() instanceof Htmlable ? $this->getTitle()->toHtml() : $this->getTitle(),
         ];
+    }
+
+    public function findPlacement(): ?MenuPlacement
+    {
+        return static::registry()->hasPlacement($this->placement)
+            ? static::registry()->placement($this->placement)
+            : null;
     }
 
     public function getPlacement(): MenuPlacement
