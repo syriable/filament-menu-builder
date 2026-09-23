@@ -254,7 +254,7 @@ $items = Menu::build('header', currentUrl: $url);
 
 ## Rendering menus with Blade components
 
-The package ships a small set of anonymous Blade components. Pass them the result of `Menu::build()` and they handle the whole tree: hierarchy, dropdowns, links, buttons, headings, attributes, icons, badges and the active state. You never loop over the tree yourself.
+The package ships a small set of anonymous Blade components built on Filament's own UI components. Pass them the result of `Menu::build()` and they render the whole tree: hierarchy, dropdowns, links, buttons, headings, attributes, icons, badges and the active state. You never loop over the tree yourself.
 
 ```blade
 <x-menu-builder::menu :items="Menu::build('header')" label="Main navigation" />
@@ -263,13 +263,14 @@ The package ships a small set of anonymous Blade components. Pass them the resul
 | Prop | Default | |
 | --- | --- | --- |
 | `items` | `[]` | the collection returned by `Menu::build()` |
-| `variant` | `dropdown` | `dropdown`: horizontal, with dropdowns on wide screens and an accordion on small screens<br>`tree`: vertical accordion; the active trail starts open<br>`columns`: root items as columns with their children listed below them |
+| `variant` | `dropdown` | `dropdown`: horizontal; items with children open Filament dropdowns, nested at any depth<br>`tree`: vertical accordion (sidebar, mobile drawer); the active trail starts open<br>`columns`: root items as columns with their children listed below them (footer) |
+| `direction` | locale | `ltr` or `rtl`; defaults to Filament's direction for the current locale |
 | `item-component` | `menu-builder::item` | component that renders one item's element |
 | `heading-tag` | `span` | element used for headings |
 | `label` | – | `aria-label` of the `<nav>` |
-| `with-assets` | config | print the structural CSS and dropdown script (once per page) |
+| `with-assets` | config | print the layout CSS and accordion script (once per page) |
 
-Thin wrappers exist for common placements. Each one is `menu` with a variant and a class:
+Thin wrappers exist for common placements. Each one is `menu` with a variant and a class, and accepts the same props:
 
 ```blade
 <x-menu-builder::header :items="Menu::build('header')" />   {{-- dropdown --}}
@@ -277,17 +278,41 @@ Thin wrappers exist for common placements. Each one is `menu` with a variant and
 <x-menu-builder::footer :items="Menu::build('footer')" />   {{-- columns --}}
 ```
 
+### Which Filament component renders what
+
+The renderer picks the component from the item type, its position and whether it has children:
+
+| Item | Top level, tree and columns | Inside a dropdown panel |
+| --- | --- | --- |
+| Link | [`<x-filament::link>`](https://filamentphp.com/docs/5.x/components/link) (`<a>`) | `<x-filament::dropdown.list.item tag="a">` |
+| Heading | `<x-filament::link>` as `heading-tag`, semibold | `<x-filament::dropdown.header>` |
+| Button | [`<x-filament::button>`](https://filamentphp.com/docs/5.x/components/button) | `<x-filament::button>`, full width |
+| Item with children (`dropdown` variant) | [`<x-filament::dropdown>`](https://filamentphp.com/docs/5.x/components/dropdown) with the item as trigger and a chevron | a nested `<x-filament::dropdown>` whose trigger is a list item |
+| Item with children (`tree` variant) | the item plus an [`<x-filament::icon-button>`](https://filamentphp.com/docs/5.x/components/icon-button) toggle | – |
+| Badge | [`<x-filament::badge>`](https://filamentphp.com/docs/5.x/components/badge) (`start`/`end`) or the component's own badge (`top`) | the list item's badge |
+
+Other rules the renderer follows:
+
+- **Colors.** The item's color is passed to the component. Without one, links are `primary` when they are the current page or on the active trail and `gray` otherwise; buttons default to `primary`.
+- **Icons.** An icon that is not installed is skipped instead of throwing, so a removed icon set never breaks the page.
+- **Parent links.** A link with children becomes a dropdown trigger. Its own page is listed as the first entry of the panel so it stays reachable.
+- **Accessibility.** Current pages get `aria-current="page"`, new tabs `target="_blank" rel="noopener noreferrer"`, and accordion toggles get `aria-expanded`, `aria-controls` and a translated label.
+
 ### Structure
 
 ```html
 <nav class="mb-menu mb-menu--dropdown" data-mb-menu="dropdown">
   <ul class="mb-list mb-root" data-level="1">
-    <li class="mb-entry mb-has-children">          <!-- wrapper -->
+    <li class="mb-entry">                                 <!-- wrapper -->
       <div class="mb-row">
-        <a class="mb-item mb-item-link" href="/services">…</a>   <!-- item root -->
-        <button class="mb-toggle" data-mb-toggle aria-expanded="false" aria-controls="…">…</button>
+        <a class="fi-link … mb-item mb-item-link" href="/">…</a>     <!-- item root -->
       </div>
-      <ul class="mb-list mb-submenu" data-level="2">…</ul>
+    </li>
+    <li class="mb-entry mb-has-children">
+      <div class="fi-dropdown mb-dropdown" data-level="1" x-data="filamentDropdown">
+        <div class="fi-dropdown-trigger"><button class="fi-link … mb-trigger">…</button></div>
+        <div class="fi-dropdown-panel">…</div>
+      </div>
     </li>
   </ul>
 </nav>
@@ -297,31 +322,68 @@ Thin wrappers exist for common placements. Each one is `menu` with a variant and
 
 An item with children is automatically a dropdown, and a child with children is a nested dropdown, at any depth. There is no separate "dropdown" item type.
 
-- **Wide screens (≥ 48rem):** submenus open on hover, on keyboard focus, or with the toggle button. The first level opens below its parent and deeper levels open to the side. If a submenu would leave the viewport it flips to the other side.
-- **Small screens:** the same markup becomes an accordion. Tapping a toggle expands or collapses that item's children in place.
-- `Escape` closes the open submenu, and clicking outside closes open dropdowns.
+- The first level opens below its trigger. Deeper levels open to the *inline end*: right in LTR, left in RTL.
+- Dropdowns are Filament's: they open on click or with `Enter`/`Space`, close on click outside or `Escape`, and use Floating UI to flip and shift so a panel never leaves the viewport.
+- For mobile navigation use the `tree` variant (or `<x-menu-builder::sidebar>`), an accordion toggled with icon buttons.
 
-The behavior comes from a dependency-free script of about 100 lines, printed once per page. It needs no Alpine and no build step. Set `menu-builder.frontend.assets` to `false` (or pass `:with-assets="false"`) to ship your own CSS and JS instead. The inline tags use Laravel's Vite CSP nonce when one is set.
+The package's own assets are tiny: layout CSS and a script for the accordion toggles, printed once per page. Set `menu-builder.frontend.assets` to `false` (or pass `:with-assets="false"`) to ship your own. The inline tags use Laravel's Vite CSP nonce when one is set.
+
+### Filament on your frontend
+
+Inside a Filament panel everything is styled and scripted already. On your public site, load Filament's styles and scripts once, the same way Filament's own `filament:install --scaffold` does:
+
+```css
+/* resources/css/app.css */
+@import 'tailwindcss';
+@import '../../vendor/filament/support/resources/css/index.css';
+```
+
+```blade
+<head>
+    @filamentStyles
+    @vite('resources/css/app.css')
+</head>
+<body>
+    …
+    @livewireScripts {{-- Alpine, used by the dropdowns --}}
+    @filamentScripts
+</body>
+```
+
+Filament registers its colors when a *panel* serves a request, so on non-panel pages register them yourself, e.g. in `AppServiceProvider::boot()`:
+
+```php
+use Filament\Support\Colors\Color;
+use Filament\Support\Facades\FilamentColor;
+
+FilamentColor::register([
+    'primary' => Color::Amber,
+    'gray' => Color::Zinc,
+    'info' => Color::Blue,
+    'success' => Color::Green,
+    'warning' => Color::Orange,
+    'danger' => Color::Red,
+]);
+```
 
 ### RTL and LTR
 
-The stylesheet only uses logical properties (`inset-inline-start`, `padding-inline-start`, …), so a menu inside `dir="rtl"` mirrors itself:
+Direction comes from the `direction` prop, or from Filament's translation for the current locale (`ar`, `he`, `fa`, … are RTL). It decides which side nested dropdowns open on and which chevron triggers show. The package CSS only uses logical properties, so badges `start` and `end` and the accordion indentation follow the reading direction. Nothing in your data is direction-specific.
 
-- Nested submenus open towards the *inline end*: right in LTR, left in RTL.
-- The flip check uses the element's computed direction and flips towards the *inline start*.
-- Badge `start` and `end` follow the reading direction.
-
-Nothing in your data is direction-specific.
+```blade
+<html dir="{{ __('filament-panels::layout.direction') }}">
+…
+<x-menu-builder::header :items="Menu::build('header')" direction="rtl" />
+```
 
 ### Styling
 
-All package selectors are wrapped in `:where()`, so they have zero specificity and a single class in your theme overrides them. Common values are custom properties:
+The components carry Filament's classes (`fi-link`, `fi-btn`, `fi-dropdown-panel`, `fi-badge`, …), so your Filament theme applies to them. The package's layout CSS sits in the `base` cascade layer and every selector is wrapped in `:where()`, so any Tailwind utility or class in your theme overrides it. Two custom properties are available:
 
 ```css
 .site-header .mb-menu {
-    --mb-submenu-background: #111827;
-    --mb-submenu-min-width: 14rem;
-    --mb-badge-background: #fde68a;
+    --mb-gap: 2rem;              /* space between root items */
+    --mb-submenu-indent: 1.5rem; /* accordion indentation */
 }
 ```
 
@@ -332,7 +394,7 @@ Build your own wrappers and keep the package responsible for the tree. For examp
 ```blade
 @props(['items'])
 
-<x-menu-builder::menu :items="$items" variant="columns" class="grid-cols-4 gap-8 text-sm" />
+<x-menu-builder::menu :items="$items" variant="columns" class="text-sm" />
 ```
 
 ```blade
@@ -341,16 +403,16 @@ Build your own wrappers and keep the package responsible for the tree. For examp
 
 ### Custom item markup
 
-There are two ways to change how a single item renders:
+There are two ways to change how items render:
 
-1. **Publish and edit the package views.** Laravel then uses your copy of `components/item.blade.php`:
+1. **Publish and edit the package views** (`components/item.blade.php`, `dropdown.blade.php`, `dropdown-item.blade.php`, …):
 
    ```bash
    php artisan vendor:publish --tag="menu-builder-views"
    # resources/views/vendor/menu-builder/components/item.blade.php
    ```
 
-2. **Pass your own component** for one menu only. It receives `item`, `level` and `heading-tag`, and the package still renders the wrappers, dropdowns and toggles around it:
+2. **Pass your own component** for one menu only. It receives `item`, `level`, `heading-tag` and, for dropdown triggers, `trigger`. It renders top-level items, accordion items and the leaf entries of dropdown panels; the package still renders the wrappers, dropdowns and toggles around it:
 
    ```blade
    <x-menu-builder::menu :items="$items" item-component="nav-item" />
@@ -358,12 +420,16 @@ There are two ways to change how a single item renders:
 
    ```blade
    {{-- resources/views/components/nav-item.blade.php --}}
-   @props(['item', 'level' => 1, 'headingTag' => 'span'])
+   @props(['item', 'level' => 1, 'headingTag' => 'span', 'trigger' => false])
 
-   <a {{ $item->itemAttributes()->class('nav-link')->merge(['href' => $item->url]) }}>{{ $item->label }}</a>
+   <x-filament::link
+       :tag="$trigger ? 'button' : 'a'"
+       :href="$trigger ? null : $item->url"
+       :attributes="$item->itemAttributes()->class('nav-link')"
+   >{{ $item->label }}</x-filament::link>
    ```
 
-Use `$item->itemAttributes()` in custom components. It returns an escaped attribute bag, so administrator-entered values are always safe to print.
+Use `$item->itemAttributes()` in custom components. It returns an escaped attribute bag, so administrator-entered values are always safe to print, also when passed to Filament components via `:attributes`.
 
 ## Buttons
 
@@ -410,42 +476,7 @@ In code:
 ]]
 ```
 
-### Filament styles on your frontend
-
-Inside a Filament panel, buttons are styled automatically. On your public site, load Filament's styles once, the same way Filament's own `filament:install --scaffold` does:
-
-```css
-/* resources/css/app.css */
-@import 'tailwindcss';
-@import '../../vendor/filament/support/resources/css/index.css';
-```
-
-```blade
-<head>
-    @filamentStyles
-    @vite('resources/css/app.css')
-</head>
-<body>
-    …
-    @filamentScripts
-</body>
-```
-
-Filament registers its colors when a *panel* serves a request, so on non-panel pages register them yourself, e.g. in `AppServiceProvider::boot()`:
-
-```php
-use Filament\Support\Colors\Color;
-use Filament\Support\Facades\FilamentColor;
-
-FilamentColor::register([
-    'primary' => Color::Amber,
-    'gray' => Color::Zinc,
-    'info' => Color::Blue,
-    'success' => Color::Green,
-    'warning' => Color::Orange,
-    'danger' => Color::Red,
-]);
-```
+Buttons need Filament's styles on your frontend; see [Filament on your frontend](#filament-on-your-frontend).
 
 ## HTML attributes
 
@@ -476,7 +507,7 @@ A badge (text plus an optional color) can sit in three logical positions, chosen
 | --- | --- |
 | `start` | before the label: left in LTR, right in RTL |
 | `end` (default) | after the label: right in LTR, left in RTL |
-| `top` | raised above the end edge of the label, so it stays attached to the text whatever its length or direction |
+| `top` | Filament's corner badge of the link or button component |
 
 ## Editing the tree
 

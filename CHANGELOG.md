@@ -4,6 +4,11 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- The frontend renderer is built on Filament's Blade components: links and headings use `<x-filament::link>`, buttons `<x-filament::button>`, badges `<x-filament::badge>`, items with children `<x-filament::dropdown>` (nested at any depth, opening towards the inline end, with flip and shift), dropdown entries `dropdown.list.item` / `dropdown.header`, and accordion toggles `<x-filament::icon-button>`.
+- New `direction` prop (`ltr`/`rtl`, defaulting to the locale's Filament direction) on `menu`, `header`, `footer` and `sidebar`.
+- A link with children lists its own page as the first dropdown entry; unknown icons are skipped instead of throwing; custom item components also render dropdown entries.
+- The package's own frontend assets shrink to layout CSS and an accordion script. Frontends now need Filament's styles and scripts (see "Filament on your frontend").
+
 - **Button** is now a built-in item type (Heading, Link, Button), rendered with Filament's `<x-filament::button>`. Color, size, outline, icon and icon position are configurable, the URL is optional, and attributes are supported.
 - The HTML attributes editor is its own section of the item form for every type. The per-item "Render as" select was removed from the form; the element now follows the item type. Existing `render_as` data keeps working.
 - `MenuItemType::renderAs()` lets custom types render as buttons.

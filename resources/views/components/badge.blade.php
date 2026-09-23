@@ -1,6 +1,7 @@
 @props(['item'])
 
-<span
+<x-filament::badge
+    :color="$item->badgeColor ?? 'primary'"
+    size="sm"
     {{ $attributes->class(['mb-badge', 'mb-badge--'.$item->badgePosition->value]) }}
-    @if (filled($item->badgeColor)) data-color="{{ $item->badgeColor }}" @endif
->{{ $item->badge }}</span>
+>{{ $item->badge }}</x-filament::badge>

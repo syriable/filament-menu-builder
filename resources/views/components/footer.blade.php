@@ -4,6 +4,7 @@
     'itemComponent' => 'menu-builder::item',
     'headingTag' => 'span',
     'label' => null,
+    'direction' => null,
     'withAssets' => null,
 ])
 
@@ -13,6 +14,7 @@
     :item-component="$itemComponent"
     :heading-tag="$headingTag"
     :label="$label"
+    :direction="$direction"
     :with-assets="$withAssets"
     {{ $attributes->class(['mb-menu--footer']) }}
 />
