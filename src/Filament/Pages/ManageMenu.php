@@ -506,7 +506,9 @@ class ManageMenu extends Page
                 IconSelect::make('icon')
                     ->label(__('menu-builder::menu-builder.fields.icon'))
                     // Items saved before the picker store Blade Icons names.
-                    ->formatStateUsing(static fn (?string $state): ?string => Icons::toHubId($state)),
+                    ->formatStateUsing(static fn (?string $state): ?string => Icons::toHubId($state))
+                    // Stored as a Blade Icons name (heroicon-o-home) whenever the icon has one.
+                    ->dehydrateStateUsing(static fn (?string $state): ?string => Icons::toBladeName($state)),
                 Select::make('color')
                     ->label(__('menu-builder::menu-builder.fields.color'))
                     ->placeholder(__('menu-builder::menu-builder.fields.default'))

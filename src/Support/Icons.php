@@ -19,6 +19,11 @@ use Throwable;
  * - Blade Icons names (e.g. `heroicon-o-home`), used by items created before
  *   the picker, by seeders and by item types.
  *
+ * Icons of Blade Icons sets are stored and resolved as Blade Icons names,
+ * so custom templates can pass `$item->icon` to any Filament component.
+ * Only icons that have no Blade Icons name (uploads, local SVGs, remote
+ * APIs) stay Icon Hub identifiers; render those with Icons::safe().
+ *
  * Filament's components throw for unknown icons, so the menu only passes
  * icons that exist.
  */
@@ -64,6 +69,29 @@ final class Icons
         }
 
         return $icon;
+    }
+
+    /**
+     * The Blade Icons name of an icon of a Blade Icons set
+     * (`heroicons:o-home` becomes `heroicon-o-home`). Other values are
+     * returned unchanged.
+     */
+    public static function toBladeName(?string $icon): ?string
+    {
+        if ($icon === null || $icon === '') {
+            return null;
+        }
+
+        if (! self::isHubId($icon)) {
+            return $icon;
+        }
+
+        [$provider, $name] = explode(':', $icon, 2);
+        $providers = IconHub::all();
+
+        return ($providers[$provider] ?? null) instanceof BladeIconSetProvider
+            ? $providers[$provider]->prefix().'-'.$name
+            : $icon;
     }
 
     public static function isHubId(string $icon): bool

@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
 use Syriable\Filament\Plugins\MenuBuilder\Data\ResolvedMenuItem;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\HttpMethod;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
+use Syriable\Filament\Plugins\MenuBuilder\Support\Icons;
 use Syriable\Filament\Plugins\MenuBuilder\Support\MenuRepository;
 use Syriable\Filament\Plugins\MenuBuilder\Support\UrlParameters;
 use Syriable\Filament\Plugins\MenuBuilder\Support\VisibilityResolver;
@@ -160,7 +161,8 @@ final readonly class MenuBuilder
                 label: $node->translatedLabel($locale) ?? $type->resolveLabel($node, $record),
                 url: $url,
                 depth: $depth,
-                icon: $node->icon,
+                // Items saved as Icon Hub identifiers get their Blade Icons name.
+                icon: Icons::toBladeName($node->icon),
                 color: $node->color,
                 badge: $node->badge,
                 badgeColor: $node->badgeColor,

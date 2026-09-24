@@ -4,6 +4,7 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- Fix: icons picked with the Icon Hub select are saved as Blade Icons names again (`heroicon-m-user` rather than `heroicons:m-user`), and `Menu::build()` converts items already saved as identifiers. Custom templates that pass `$item->icon` to Filament components no longer throw `SvgNotFound`. Icons without a Blade Icons name (uploads, remote providers) stay identifiers; render them with `Support\Icons::safe()`.
 - HTTP methods for links and buttons (`data.method`): GET, POST, PUT, PATCH or DELETE. Anything other than GET renders a submit button inside a form with the CSRF token and method spoofing, e.g. for logout. The route picker offers the routes of the chosen method, and saving rejects routes that don't accept it. The tree shows a method badge.
 
 - Dynamic URLs: link URLs and route parameters accept placeholders resolved per visitor: `{user}`, `{user.attribute}`, `{route.parameter}` and `{query.key}`. Custom placeholders can be added with `Menu::registerUrlParameter()`. Links whose placeholders have no value (e.g. `{user}` for guests) are left out. Unknown placeholders in route parameters are rejected on save.

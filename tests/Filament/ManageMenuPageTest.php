@@ -679,7 +679,8 @@ describe('item form', function (): void {
             ->assertHasNoActionErrors()
             ->callAction('save');
 
-        expect(Menu::build('header')->last()->icon)->toBe('heroicons:o-shopping-bag');
+        expect(MenuItem::query()->where('label', 'Shop')->value('icon'))->toBe('heroicon-o-shopping-bag')
+            ->and(Menu::build('header')->last()->icon)->toBe('heroicon-o-shopping-bag');
     });
 
     it('shows Blade Icons names of older items in the icon select', function (): void {

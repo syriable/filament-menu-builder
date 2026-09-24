@@ -323,13 +323,19 @@ Menu::registerItemType(
 
 The **Icon** field of the item form is Icon Hub's `IconSelect`: a searchable dropdown with an icon grid. It covers every installed Blade Icons set (Heroicons ship with Filament; add `lucide`, `tabler`, `fontawesome`, … by installing their Blade Icons packages) and any provider you register with Icon Hub (local SVG folders, uploads, remote APIs).
 
-Items store Icon Hub identifiers, `provider:name`:
+Icons of Blade Icons sets are saved as their Blade Icons name, for example `heroicon-m-user`. `$item->icon` from `Menu::build()` can therefore go straight into any Filament component or `@svg()` in your own templates:
 
-```php
-['type' => 'link', 'label' => 'Shop', 'icon' => 'heroicons:o-shopping-bag', 'data' => [...]],
+```blade
+<x-filament::link :icon="$item->icon" :href="$item->url">{{ $item->label }}</x-filament::link>
 ```
 
-Blade Icons names such as `heroicon-o-home` keep working everywhere, so older items, seeders and item types (`->icon('heroicon-o-tag')`) need no changes. The form shows them as the matching Icon Hub icon and saves the identifier the next time the item is saved. Unknown icons, in either format, are left out instead of breaking the page. `Support\Icons::safe($icon)` resolves both formats for your own components.
+Items saved as Icon Hub identifiers (`heroicons:m-user`) are converted when the menu is built, so they work too. Only icons without a Blade Icons name (uploads, local SVG folders, remote APIs) stay `provider:name` identifiers. Render those with `Support\Icons::safe($item->icon)`, which accepts both formats and returns `null` for unknown icons. The package's own components already use it.
+
+In a seeder, use either format:
+
+```php
+['type' => 'link', 'label' => 'Profile', 'icon' => 'heroicon-m-user', 'data' => [...]],
+```
 
 To limit which icon sets the picker offers, use Icon Hub's config (`config/icon-hub.php`, `blade_icons.sets`).
 
