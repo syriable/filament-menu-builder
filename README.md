@@ -471,7 +471,7 @@ The panel width follows from its columns, so it is known before the panel opens.
 | `--mb-mega-strip-padding-block` | `0.625rem` | height of the category row |
 | `--mb-mega-indicator-color`, `--mb-mega-indicator-size` | primary, `3px` | line under the hovered, open or active category |
 | `--mb-mega-arrow-size` | `2.25rem` | width of the scroll arrows |
-| `--mb-mega-fade-color` | white / gray-900 in dark mode | background the arrows fade from; set it to your header's background |
+| `--mb-mega-fade-color` | white / gray-800 in dark mode | background the arrows fade from; set it to your header's background |
 
 ```css
 .site-header .mb-menu--mega {

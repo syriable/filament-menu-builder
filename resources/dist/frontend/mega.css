@@ -62,7 +62,7 @@
     :where(.dark .mb-menu--mega) {
         --mb-mega-panel-background: var(--gray-900, #111);
         --mb-mega-panel-border-color: rgb(255 255 255 / 0.1);
-        --mb-mega-fade-color: var(--gray-900, #111);
+        --mb-mega-fade-color: var(--gray-800, #27272a);
     }
 
     /* The strip: scrolls horizontally, never positioned (see above). */
