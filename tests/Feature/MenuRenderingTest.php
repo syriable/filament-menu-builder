@@ -579,6 +579,59 @@ describe('text style', function (): void {
     });
 });
 
+describe('screen visibility', function (): void {
+    it('adds the screen classes to the wrapper of every variant', function (string $variant): void {
+        $screens = Syriable\Filament\Plugins\MenuBuilder\Support\ScreenVisibility::fromArray(['from' => 'md', 'until' => 'xl']);
+
+        $xpath = renderMenu([resolved('Apps', ['screens' => $screens]), resolved('About')], 'variant="'.$variant.'"');
+
+        $li = one($xpath, '//li[contains(@class, "mb-show-from-md")]');
+
+        expect($li->getAttribute('class'))->toContain('mb-entry')->toContain('mb-hide-from-xl')
+            ->and($xpath->query('.//a[@href="/apps"]', $li)->length)->toBe(1)
+            ->and($xpath->query('//*[contains(@class, "mb-show-from") or contains(@class, "mb-hide-from")]')->length)->toBe(1);
+    })->with(['dropdown', 'tree', 'columns']);
+
+    it('wraps dropdown entries that have screen classes', function (): void {
+        $xpath = renderMenu([resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+            resolved('Apps', ['depth' => 2, 'screens' => Syriable\Filament\Plugins\MenuBuilder\Support\ScreenVisibility::fromArray(['until' => 'md'])]),
+            resolved('About', ['depth' => 2]),
+        ]])]);
+
+        expect(one($xpath, '//div[contains(@class, "mb-panel-entry")]')->getAttribute('class'))->toContain('mb-hide-from-md')
+            ->and(one($xpath, '//div[contains(@class, "mb-panel-entry")]/a')->getAttribute('href'))->toBe('/apps')
+            ->and($xpath->query('//div[contains(@class, "mb-panel-entry")]')->length)->toBe(1);
+    });
+
+    it('applies wrapper attributes to dropdown entries', function (): void {
+        $xpath = renderMenu([resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+            resolved('Apps', ['depth' => 2, 'attributes' => ['data-section' => 'apps'], 'attributeTarget' => AttributeTarget::Wrapper]),
+        ]])]);
+
+        expect(one($xpath, '//div[@data-section="apps"]')->getAttribute('class'))->toContain('mb-panel-entry')
+            ->and(one($xpath, '//a[@href="/apps"]')->hasAttribute('data-section'))->toBeFalse();
+    });
+
+    it('prints no empty class or style attributes', function (): void {
+        $html = Blade::render('<x-menu-builder::menu :items="$items" />', ['items' => [
+            resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [resolved('Web', ['depth' => 2])]]),
+        ]]);
+
+        expect($html)->not->toContain('style=";"')->not->toContain('mb-panel-entry');
+    });
+
+    it('ships a media query for every breakpoint', function (): void {
+        $css = Syriable\Filament\Plugins\MenuBuilder\Support\FrontendAssets::css();
+
+        foreach (Syriable\Filament\Plugins\MenuBuilder\Enums\Breakpoint::cases() as $breakpoint) {
+            $rem = rtrim(rtrim(number_format($breakpoint->pixels() / 16, 2, '.', ''), '0'), '.').'rem';
+
+            expect($css)->toMatch('/@media \(width < '.preg_quote($rem, '/').'\) \{\s*\.mb-menu \.mb-show-from-'.$breakpoint->value.'\.mb-show-from-'.$breakpoint->value.' \{ display: none; \}/')
+                ->toMatch('/@media \(width >= '.preg_quote($rem, '/').'\) \{\s*\.mb-menu \.mb-hide-from-'.$breakpoint->value.'\.mb-hide-from-'.$breakpoint->value.' \{ display: none; \}/');
+        }
+    });
+});
+
 describe('filament buttons', function (): void {
     it('renders button items with the Filament button component', function (): void {
         $button = one(renderMenu([resolved('Login', [

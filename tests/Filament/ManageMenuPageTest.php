@@ -632,6 +632,37 @@ describe('item form', function (): void {
         ]);
     });
 
+    it('stores the screen visibility from the form', function (): void {
+        $component = livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->assertFormFieldVisible('item-fields.data.screens.from')
+            ->assertFormFieldVisible('item-fields.data.screens.until')
+            ->callMountedAction();
+
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Apps',
+                'data' => ['link_type' => 'url', 'url' => '/apps', 'screens' => ['from' => 'md', 'until' => 'lg']],
+            ])
+            ->assertHasNoActionErrors()
+            ->assertSee('md+')
+            ->assertSee('< lg')
+            ->callAction('save');
+
+        expect(Menu::build('header')->last()->screens->toArray())->toBe(['from' => 'md', 'until' => 'lg']);
+    });
+
+    it('rejects screen ranges that never match', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Apps',
+                'data' => ['link_type' => 'url', 'url' => '/apps', 'screens' => ['from' => 'lg', 'until' => 'md']],
+            ])
+            ->assertHasActionErrors(['data.screens']);
+    });
+
     it('rejects invalid hover colors', function (): void {
         livewire(ManageMenu::class, ['placement' => 'header'])
             ->callAction('createItem', data: [

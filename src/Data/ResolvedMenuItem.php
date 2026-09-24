@@ -11,6 +11,7 @@ use Syriable\Filament\Plugins\MenuBuilder\Enums\AttributeTarget;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Support\HtmlAttributes;
+use Syriable\Filament\Plugins\MenuBuilder\Support\ScreenVisibility;
 use Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle;
 
 /**
@@ -45,6 +46,7 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
         public AttributeTarget $attributeTarget = AttributeTarget::Item,
         public BadgePosition $badgePosition = BadgePosition::End,
         public TextStyle $textStyle = new TextStyle,
+        public ScreenVisibility $screens = new ScreenVisibility,
     ) {}
 
     public function hasChildren(): bool
@@ -101,9 +103,15 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
      */
     public function itemAttributes(): ComponentAttributeBag
     {
-        return HtmlAttributes::bag($this->attributeTarget === AttributeTarget::Item ? $this->attributes : [])
-            ->class($this->textStyle->classes())
-            ->style($this->textStyle->styles());
+        $attributes = HtmlAttributes::bag($this->attributeTarget === AttributeTarget::Item ? $this->attributes : []);
+        $classes = $this->textStyle->classes();
+        $styles = $this->textStyle->styles();
+
+        if ($classes !== []) {
+            $attributes = $attributes->class($classes);
+        }
+
+        return $styles === [] ? $attributes : $attributes->style($styles);
     }
 
     /**
@@ -111,7 +119,10 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
      */
     public function wrapperAttributes(): ComponentAttributeBag
     {
-        return HtmlAttributes::bag($this->attributeTarget === AttributeTarget::Wrapper ? $this->attributes : []);
+        $attributes = HtmlAttributes::bag($this->attributeTarget === AttributeTarget::Wrapper ? $this->attributes : []);
+        $screens = $this->screens->classes();
+
+        return $screens === [] ? $attributes : $attributes->class($screens);
     }
 
     /**
@@ -146,6 +157,7 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
             'attribute_target' => $this->attributeTarget->value,
             'badge_position' => $this->badgePosition->value,
             'text_style' => $this->textStyle->toArray(),
+            'screens' => $this->screens->toArray(),
             'children' => array_map(static fn (self $child): array => $child->toArray(), $this->children),
         ];
     }

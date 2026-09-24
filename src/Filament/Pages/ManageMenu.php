@@ -28,6 +28,7 @@ use Syriable\Filament\Plugins\MenuBuilder\Drafts\MenuDraft;
 use Syriable\Filament\Plugins\MenuBuilder\Drafts\MenuDraftManager;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\AttributeTarget;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\Breakpoint;
 use Syriable\Filament\Plugins\MenuBuilder\Exceptions\DraftNotFound;
 use Syriable\Filament\Plugins\MenuBuilder\Exceptions\InvalidMenuTree;
 use Syriable\Filament\Plugins\MenuBuilder\Exceptions\StaleMenu;
@@ -417,6 +418,7 @@ class ManageMenu extends Page
                     ->default(true)
                     ->inline(false),
             ]),
+            $this->screensSection($data),
             ...$this->labelTranslationSection($data),
             $this->appearanceSection($node),
             $this->textStyleSection($data),
@@ -457,6 +459,37 @@ class ManageMenu extends Page
                 ->collapsed(! $this->hasValues($data[MenuNode::DATA_LABEL_TRANSLATIONS] ?? null))
                 ->compact(),
         ];
+    }
+
+    /**
+     * On which screen sizes the item is shown, stored in `data.screens`.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected function screensSection(array $data): Section
+    {
+        $options = collect(Breakpoint::cases())
+            ->mapWithKeys(static fn (Breakpoint $breakpoint): array => [$breakpoint->value => $breakpoint->getLabel()])
+            ->all();
+
+        return Section::make(__('menu-builder::menu-builder.fields.screens'))
+            ->description(__('menu-builder::menu-builder.fields.screens_help'))
+            ->icon(Heroicon::OutlinedDevicePhoneMobile)
+            ->schema([
+                Select::make('from')
+                    ->label(__('menu-builder::menu-builder.fields.screens_from'))
+                    ->placeholder(__('menu-builder::menu-builder.fields.screens_from_placeholder'))
+                    ->options($options),
+                Select::make('until')
+                    ->label(__('menu-builder::menu-builder.fields.screens_until'))
+                    ->placeholder(__('menu-builder::menu-builder.fields.screens_until_placeholder'))
+                    ->options($options),
+            ])
+            ->statePath('data.'.MenuNode::DATA_SCREENS)
+            ->columns(2)
+            ->collapsible()
+            ->collapsed(! $this->hasValues($data[MenuNode::DATA_SCREENS] ?? null))
+            ->compact();
     }
 
     protected function appearanceSection(?MenuNode $node): Section

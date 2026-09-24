@@ -3,6 +3,9 @@
     has children, a dropdown header for headings, a Filament button for button
     items, otherwise a dropdown list item (a link, or a <button> without URL).
     A custom item component, when given, renders every leaf entry instead.
+
+    Entries whose wrapper has attributes (screen visibility classes, or HTML
+    attributes that target the wrapper) are wrapped in a <div> carrying them.
 --}}
 @props([
     'item',
@@ -21,7 +24,13 @@
     $icon = Icons::safe($item->icon);
     $badge = $item->hasBadge() && $item->badgePosition !== BadgePosition::Start ? $item->badge : null;
     $label = view('menu-builder::frontend.label', ['item' => $item, 'trigger' => false, 'inline' => true]);
+    $wrapper = $item->wrapperAttributes();
+    $wrapped = $wrapper->getAttributes() !== [];
 @endphp
+
+@if ($wrapped)
+    <div {{ $wrapper->class(['mb-panel-entry']) }}>
+@endif
 
 @if ($item->hasChildren())
     <x-menu-builder::dropdown
@@ -68,4 +77,8 @@
                 'rel' => $item->openInNewTab && $item->url !== null ? 'noopener noreferrer' : null,
             ]))"
     >{{ $label }}</x-filament::dropdown.list.item>
+@endif
+
+@if ($wrapped)
+    </div>
 @endif

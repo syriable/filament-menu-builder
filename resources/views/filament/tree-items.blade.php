@@ -64,6 +64,15 @@
                 <x-filament::badge size="sm" color="gray">{{ __('menu-builder::menu-builder.tree.inactive') }}</x-filament::badge>
             @endif
 
+            @php($screens = $node->screens())
+
+            @unless ($screens->isAlways())
+                <x-filament::badge size="sm" color="gray" icon="heroicon-m-device-phone-mobile">{{ implode(' · ', array_filter([
+                    $screens->from ? __('menu-builder::menu-builder.tree.screens_from', ['breakpoint' => $screens->from->value]) : null,
+                    $screens->until ? __('menu-builder::menu-builder.tree.screens_until', ['breakpoint' => $screens->until->value]) : null,
+                ])) }}</x-filament::badge>
+            @endunless
+
             @if ($node->visibility !== 'everyone')
                 <x-filament::badge size="sm" color="warning" icon="heroicon-m-eye">{{ $visibility?->getLabel() ?? $node->visibility }}</x-filament::badge>
             @endif

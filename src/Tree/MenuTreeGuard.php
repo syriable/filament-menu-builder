@@ -15,6 +15,7 @@ use Syriable\Filament\Plugins\MenuBuilder\MenuItemType;
 use Syriable\Filament\Plugins\MenuBuilder\MenuPlacement;
 use Syriable\Filament\Plugins\MenuBuilder\MenuRegistry;
 use Syriable\Filament\Plugins\MenuBuilder\Support\HtmlAttributes;
+use Syriable\Filament\Plugins\MenuBuilder\Support\ScreenVisibility;
 use Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle;
 
 /**
@@ -180,6 +181,7 @@ final readonly class MenuTreeGuard
             MenuNode::DATA_LABEL_TRANSLATIONS => ['nullable', 'array', $this->localeKeysRule()],
             MenuNode::DATA_LABEL_TRANSLATIONS.'.*' => ['nullable', 'string', 'max:255'],
             ...TextStyle::rules(MenuNode::DATA_TEXT_STYLE),
+            ...ScreenVisibility::rules(MenuNode::DATA_SCREENS),
         ]);
 
         foreach ($rendering->errors()->messages() as $field => $messages) {

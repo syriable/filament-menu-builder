@@ -20,6 +20,10 @@
  * Per-item text options (data.text_style) add mb-weight-*, mb-text-*,
  * mb-italic, mb-underline-*, mb-transform-*, mb-cursor-* and mb-hover-color
  * (with --mb-item-hover-color) to the item element.
+ *
+ * Per-item screen visibility (data.screens) adds mb-show-from-* and
+ * mb-hide-from-* to the item's wrapper; the breakpoints are Tailwind's
+ * defaults (sm 40rem, md 48rem, lg 64rem, xl 80rem, 2xl 96rem).
  */
 
 @layer base {
@@ -282,5 +286,47 @@
     .mb-menu .mb-item.mb-hover-color.mb-hover-color:is(:hover, :focus-visible),
     .mb-menu .mb-item.mb-hover-color:is(:hover, :focus-visible) :is(.fi-dropdown-list-item-label, .fi-icon, .fi-btn-label) {
         color: var(--mb-item-hover-color);
+    }
+
+    /* Screen visibility per item. */
+
+    @media (width < 40rem) {
+        .mb-menu .mb-show-from-sm.mb-show-from-sm { display: none; }
+    }
+
+    @media (width < 48rem) {
+        .mb-menu .mb-show-from-md.mb-show-from-md { display: none; }
+    }
+
+    @media (width < 64rem) {
+        .mb-menu .mb-show-from-lg.mb-show-from-lg { display: none; }
+    }
+
+    @media (width < 80rem) {
+        .mb-menu .mb-show-from-xl.mb-show-from-xl { display: none; }
+    }
+
+    @media (width < 96rem) {
+        .mb-menu .mb-show-from-2xl.mb-show-from-2xl { display: none; }
+    }
+
+    @media (width >= 40rem) {
+        .mb-menu .mb-hide-from-sm.mb-hide-from-sm { display: none; }
+    }
+
+    @media (width >= 48rem) {
+        .mb-menu .mb-hide-from-md.mb-hide-from-md { display: none; }
+    }
+
+    @media (width >= 64rem) {
+        .mb-menu .mb-hide-from-lg.mb-hide-from-lg { display: none; }
+    }
+
+    @media (width >= 80rem) {
+        .mb-menu .mb-hide-from-xl.mb-hide-from-xl { display: none; }
+    }
+
+    @media (width >= 96rem) {
+        .mb-menu .mb-hide-from-2xl.mb-hide-from-2xl { display: none; }
     }
 }

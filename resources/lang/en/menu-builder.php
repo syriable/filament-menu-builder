@@ -119,6 +119,20 @@ return [
         'hover_color' => 'Hover color',
         'hover_color_help' => 'The text color on hover, e.g. #f59e0b.',
         'default' => 'Default',
+        'screens' => 'Screen sizes',
+        'screens_help' => 'Phones only: hide from md. Tablets and larger: show from md. Tablets only: show from md, hide from lg.',
+        'screens_from' => 'Show from',
+        'screens_from_placeholder' => 'All sizes (phones and up)',
+        'screens_until' => 'Hide from',
+        'screens_until_placeholder' => 'Never',
+    ],
+
+    'breakpoints' => [
+        'sm' => 'sm: :widthpx and wider',
+        'md' => 'md: :widthpx and wider (tablets)',
+        'lg' => 'lg: :widthpx and wider (laptops)',
+        'xl' => 'xl: :widthpx and wider (desktops)',
+        '2xl' => '2xl: :widthpx and wider (large screens)',
     ],
 
     'text' => [
@@ -186,6 +200,8 @@ return [
         'toggle' => 'Expand or collapse',
         'new' => 'New',
         'inactive' => 'Inactive',
+        'screens_from' => ':breakpoint+',
+        'screens_until' => '< :breakpoint',
     ],
 
     'notifications' => [
@@ -212,6 +228,7 @@ return [
         'missing_parent' => 'The parent item does not exist in this menu.',
         'attribute_name' => '":name" is not a valid HTML attribute name.',
         'color' => 'Enter a color such as #f59e0b, rgb(245 158 11) or oklch(0.77 0.16 70).',
+        'screens' => '"Hide from" must be a larger screen size than "Show from", otherwise the item is never shown.',
         'locale' => '":locale" is not a valid locale.',
         'attribute_value' => 'The value of the ":name" attribute must be plain text.',
         'route_missing' => 'The route ":route" does not exist.',
