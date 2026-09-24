@@ -19,6 +19,7 @@ return [
         'heading' => 'Heading',
         'link' => 'Link',
         'button' => 'Button',
+        'mega_category' => 'Mega menu category',
     ],
 
     'icon_positions' => [
@@ -57,6 +58,7 @@ return [
 
     'frontend' => [
         'toggle' => 'Toggle :item submenu',
+        'view_all' => 'All of :item',
     ],
 
     'colors' => [
@@ -98,6 +100,9 @@ return [
         'icon_position' => 'Icon position',
         'outlined' => 'Outlined',
         'button_url' => 'URL (optional)',
+        'columns' => 'Panel columns',
+        'columns_auto' => 'Automatic',
+        'columns_help' => 'Automatic uses one column per group, up to four.',
         'button_url_help' => 'Leave empty for a plain button that only triggers its attributes (e.g. opens a modal). With a URL the button links there.',
         'attribute_target' => 'Apply attributes to',
         'visibility' => 'Visible to',
