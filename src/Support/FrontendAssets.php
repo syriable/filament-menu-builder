@@ -25,6 +25,14 @@ final class FrontendAssets
         return self::read('menu.js');
     }
 
+    /**
+     * Styles of the "mega" variant, printed only by menus that use it.
+     */
+    public static function megaCss(): string
+    {
+        return self::read('mega.css');
+    }
+
     private static function read(string $file): string
     {
         return self::$contents[$file] ??= (string) file_get_contents(__DIR__.'/../../resources/dist/frontend/'.$file);

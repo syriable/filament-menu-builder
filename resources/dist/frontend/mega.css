@@ -1,0 +1,265 @@
+/*
+ * Menu builder: styles for <x-menu-builder::menu variant="mega">.
+ *
+ * Printed once per page, after menu.css, only by menus that use the variant.
+ * Layout lives in the `base` layer inside :where(), link colors in the
+ * `components` layer, like menu.css. Only logical properties are used, so
+ * the same rules work for dir="ltr" and dir="rtl".
+ *
+ * Layout contract: the <nav> is position: relative and is the containing
+ * block of every panel. The strip scrolls (overflow-x: auto) but is NOT
+ * positioned, so a panel is neither clipped nor scrolled by it. Adding a
+ * position to .mb-mega-strip, .mb-mega-list or .mb-mega-entry would clip
+ * every panel.
+ *
+ * Custom properties, set on the menu or any ancestor:
+ *   --mb-mega-column-width        width of one panel column (15.5rem)
+ *   --mb-mega-column-gap          space between panel columns (4.5rem)
+ *   --mb-mega-panel-padding-block, --mb-mega-panel-padding-inline
+ *   --mb-mega-panel-border-width  (1px)
+ *   --mb-mega-panel-background, --mb-mega-panel-border-color
+ *   --mb-mega-panel-shadow, --mb-mega-panel-z-index
+ *   --mb-mega-item-gap            minimum space between categories (1.25rem)
+ *   --mb-mega-strip-padding-block height of the category row
+ *   --mb-mega-indicator-color, --mb-mega-indicator-size
+ *   --mb-mega-arrow-size          width of the scroll arrows (2.25rem)
+ *   --mb-mega-fade-color          background the arrows fade from; match your header
+ */
+
+@layer base {
+    :where(.mb-menu--mega) {
+        --mb-mega-column-width: 15.5rem;
+        --mb-mega-column-gap: 4.5rem;
+        --mb-mega-panel-padding-block: 1.25rem;
+        --mb-mega-panel-padding-inline: 2rem;
+        --mb-mega-panel-border-width: 1px;
+        --mb-mega-panel-background: #fff;
+        --mb-mega-panel-border-color: var(--gray-200, rgb(128 128 128 / 0.2));
+        --mb-mega-panel-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+        --mb-mega-panel-z-index: 40;
+        --mb-mega-item-gap: 1.25rem;
+        --mb-mega-strip-padding-block: 0.625rem;
+        --mb-mega-indicator-color: var(--primary-500, currentColor);
+        --mb-mega-indicator-size: 3px;
+        --mb-mega-arrow-size: 2.25rem;
+        --mb-mega-fade-color: #fff;
+
+        position: relative;
+        display: block;
+        min-inline-size: 0;
+    }
+
+    :where(.dark .mb-menu--mega) {
+        --mb-mega-panel-background: var(--gray-900, #111);
+        --mb-mega-panel-border-color: rgb(255 255 255 / 0.1);
+        --mb-mega-fade-color: var(--gray-900, #111);
+    }
+
+    /* The strip: scrolls horizontally, never positioned (see above). */
+
+    :where(.mb-menu--mega .mb-mega-strip) {
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: none;
+        scroll-padding-inline: var(--mb-mega-arrow-size);
+    }
+
+    :where(.mb-menu--mega .mb-mega-strip)::-webkit-scrollbar {
+        display: none;
+    }
+
+    :where(.mb-menu--mega .mb-mega-list) {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--mb-mega-item-gap);
+        inline-size: max-content;
+        min-inline-size: 100%;
+    }
+
+    :where(.mb-menu--mega .mb-mega-entry) {
+        flex-shrink: 0;
+    }
+
+    :where(.mb-menu--mega .mb-mega-entry[data-mb-mega-obscured]) {
+        pointer-events: none;
+    }
+
+    :where(.mb-menu--mega .mb-mega-entry > .mb-row) {
+        position: relative;
+        padding-block: var(--mb-mega-strip-padding-block);
+        white-space: nowrap;
+    }
+
+    /* The indicator under a hovered, open or active category. */
+
+    :where(.mb-menu--mega .mb-mega-entry > .mb-row)::after {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: 0;
+        block-size: var(--mb-mega-indicator-size);
+        background-color: var(--mb-mega-indicator-color);
+        scale: 0 1;
+        transition: scale 150ms ease;
+    }
+
+    :where(.mb-menu--mega .mb-mega-entry:is(:hover, [data-open], .mb-current, .mb-active-trail) > .mb-row)::after {
+        scale: 1 1;
+    }
+
+    /* Scroll arrows: shown by the script only on the side that has more categories. */
+
+    :where(.mb-menu--mega .mb-mega-arrow) {
+        position: absolute;
+        inset-block: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        inline-size: var(--mb-mega-arrow-size);
+        margin: 0;
+        padding: 0;
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    :where(.mb-menu--mega .mb-mega-arrow[hidden]) {
+        display: none;
+    }
+
+    :where(.mb-menu--mega .mb-mega-arrow--start) {
+        inset-inline-start: 0;
+        justify-content: flex-start;
+        background: linear-gradient(to right, var(--mb-mega-fade-color) 50%, transparent);
+    }
+
+    :where(.mb-menu--mega .mb-mega-arrow--end) {
+        inset-inline-end: 0;
+        justify-content: flex-end;
+        background: linear-gradient(to left, var(--mb-mega-fade-color) 50%, transparent);
+    }
+
+    :where(.mb-menu--mega[dir="rtl"] .mb-mega-arrow--start) {
+        background: linear-gradient(to left, var(--mb-mega-fade-color) 50%, transparent);
+    }
+
+    :where(.mb-menu--mega[dir="rtl"] .mb-mega-arrow--end) {
+        background: linear-gradient(to right, var(--mb-mega-fade-color) 50%, transparent);
+    }
+
+    :where(.mb-menu--mega .mb-mega-arrow-icon) {
+        inline-size: 1rem;
+        block-size: 1rem;
+    }
+
+    /*
+     * Panels. The width follows from the column count alone, so the script
+     * can place a panel in the same frame it opens it. The inline start is
+     * set by the script: aligned with the category, kept inside the <nav>.
+     */
+
+    :where(.mb-menu--mega .mb-mega-panel) {
+        --mb-mega-cols: 2;
+
+        position: absolute;
+        z-index: var(--mb-mega-panel-z-index);
+        inset-inline-start: 0;
+        display: none;
+        box-sizing: border-box;
+        inline-size: min(
+            100%,
+            calc(
+                var(--mb-mega-cols) * var(--mb-mega-column-width)
+                + (var(--mb-mega-cols) - 1) * var(--mb-mega-column-gap)
+                + 2 * var(--mb-mega-panel-padding-inline)
+                + 2 * var(--mb-mega-panel-border-width)
+            )
+        );
+        padding: var(--mb-mega-panel-padding-block) var(--mb-mega-panel-padding-inline);
+        column-count: var(--mb-mega-cols);
+        column-gap: var(--mb-mega-column-gap);
+        background-color: var(--mb-mega-panel-background);
+        border: var(--mb-mega-panel-border-width) solid var(--mb-mega-panel-border-color);
+        border-radius: 0;
+        box-shadow: var(--mb-mega-panel-shadow);
+        text-align: start;
+        white-space: normal;
+    }
+
+    :where(.mb-menu--mega .mb-mega-panel[data-mb-mega-columns="1"]) { --mb-mega-cols: 1; }
+    :where(.mb-menu--mega .mb-mega-panel[data-mb-mega-columns="2"]) { --mb-mega-cols: 2; }
+    :where(.mb-menu--mega .mb-mega-panel[data-mb-mega-columns="3"]) { --mb-mega-cols: 3; }
+    :where(.mb-menu--mega .mb-mega-panel[data-mb-mega-columns="4"]) { --mb-mega-cols: 4; }
+
+    :where(.mb-menu--mega .mb-mega-entry[data-open] > .mb-mega-panel) {
+        display: block;
+    }
+
+    :where(.mb-menu--mega .mb-mega-view-all) {
+        display: none;
+        column-span: all;
+        padding-block-end: 0.75rem;
+    }
+
+    :where(.mb-menu--mega[data-mb-mega-touch] .mb-mega-view-all) {
+        display: block;
+    }
+
+    /* Groups never break across columns. */
+
+    :where(.mb-menu--mega .mb-mega-group) {
+        break-inside: avoid;
+        padding-block-end: 0.75rem;
+    }
+
+    :where(.mb-menu--mega .mb-mega-group-title > .mb-row) {
+        padding-block: 0.375rem;
+    }
+
+    :where(.mb-menu--mega .mb-mega-links) {
+        display: flex;
+        flex-direction: column;
+    }
+
+    :where(.mb-menu--mega .mb-mega-links .mb-row) {
+        padding-block: 0.375rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :where(.mb-menu--mega .mb-mega-entry > .mb-row)::after {
+            transition: none;
+        }
+    }
+}
+
+@layer components {
+    /*
+     * Panel entries follow the dropdown colors of menu.css (the panel's own
+     * --mb-dropdown-color) instead of the menu's --mb-color, which is often
+     * meant for a dark header. Resetting the properties keeps the specificity
+     * of menu.css, so per-item colors and hover colors still win.
+     */
+
+    .mb-menu--mega .mb-mega-panel {
+        --mb-color: currentColor;
+        --mb-hover-color: var(--mb-dropdown-hover-color, currentColor);
+        --mb-active-color: var(--mb-dropdown-active-color, currentColor);
+    }
+
+    /* Group titles are semibold; the per-item weight options still win. */
+
+    .mb-menu--mega .mb-mega-group-title :where(.mb-item.fi-link) {
+        font-weight: 600;
+    }
+
+    /*
+     * Categories show the indicator instead of an underline. The per-item
+     * underline options still win.
+     */
+
+    .mb-menu--mega .mb-mega-entry > .mb-row > :where(.mb-item.fi-link):is(:hover, :focus-visible) .mb-label {
+        text-decoration-line: none;
+    }
+}
