@@ -4,6 +4,7 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- Users who may view the menu list but not open the editor (e.g. no `View:ManageMenu` Shield permission) now see the placement cards without a link, marked "View only", instead of links that lead to a 403 page.
 - Filament Shield support: when the panel registers the Shield plugin, the menu list and editor require their Shield page permissions (`View:MenuPlacements`, `View:ManageMenu`), on top of the placement policy. `MenuBuilderPlugin::shield(false)` turns it off, `shield()` forces it. Shield is a suggested package, not a dependency.
 - Place the menu pages in a cluster (`MenuBuilderPlugin::cluster()`), under a resource (`resource()`, which nests the navigation item below the resource and prepends it to the breadcrumbs), or under any navigation item (`navigationParentItem()`).
 - Fix: icons picked with the Icon Hub select are saved as Blade Icons names again (`heroicon-m-user` rather than `heroicons:m-user`), and `Menu::build()` converts items already saved as identifiers. Custom templates that pass `$item->icon` to Filament components no longer throw `SvgNotFound`. Icons without a Blade Icons name (uploads, remote providers) stay identifiers; render them with `Support\Icons::safe()`.

@@ -85,7 +85,11 @@ class MenuPlacements extends Page
     }
 
     /**
-     * @return list<array{placement: MenuPlacement, count: int, url: string}>
+     * Placements the user may view. The URL is null when the user may not
+     * open the editor (e.g. no Shield permission for it): the card is then
+     * shown without a link.
+     *
+     * @return list<array{placement: MenuPlacement, count: int, url: ?string}>
      */
     public function getPlacements(): array
     {
@@ -101,10 +105,12 @@ class MenuPlacements extends Page
             ->groupBy('placement')
             ->pluck('aggregate', 'placement');
 
+        $canManage = ManageMenu::canAccess();
+
         return array_values(array_map(static fn (MenuPlacement $placement): array => [
             'placement' => $placement,
             'count' => (int) ($counts[$placement->getKey()] ?? 0),
-            'url' => ManageMenu::getUrl(['placement' => $placement->getKey()]),
+            'url' => $canManage ? ManageMenu::getUrl(['placement' => $placement->getKey()]) : null,
         ], $placements));
     }
 }

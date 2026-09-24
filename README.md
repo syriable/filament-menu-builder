@@ -1015,7 +1015,7 @@ Generate the permissions and assign them to roles as usual:
 php artisan shield:generate --all --panel=admin
 ```
 
-Both permissions are needed to edit menus: the first opens the list, the second the editor. Shield's own key format settings (prefix, separator, case) apply; the package reads the keys from Shield. Your placement policy, if any, still applies on top of the Shield permissions.
+Both permissions are needed to edit menus: the first opens the list, the second the editor. Users with only `View:MenuPlacements` see the menu cards marked "View only", without a link to the editor. Shield's own key format settings (prefix, separator, case) apply; the package reads the keys from Shield. Your placement policy, if any, still applies on top of the Shield permissions.
 
 To exclude a page from Shield, add it to `pages.exclude` in `config/filament-shield.php`; it is then only checked by the policy. To opt out entirely, or to force the check on a panel that does not register the Shield plugin:
 

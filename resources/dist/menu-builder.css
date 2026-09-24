@@ -28,6 +28,20 @@
     outline-color: var(--primary-500);
 }
 
+.mb-editor .mb-placement-card-disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.mb-editor .mb-placement-card-disabled:hover {
+    outline-color: color-mix(in oklab, var(--gray-950) 5%, transparent);
+}
+
+.mb-editor .mb-placement-card-locked {
+    font-weight: 500;
+    color: var(--gray-400);
+}
+
 .mb-editor .mb-placement-card-header {
     display: flex;
     align-items: center;
@@ -255,6 +269,10 @@
 
 :is(.dark) .mb-editor .mb-placement-card {
     background: var(--gray-900);
+    outline-color: color-mix(in oklab, white 10%, transparent);
+}
+
+:is(.dark) .mb-editor .mb-placement-card-disabled:hover {
     outline-color: color-mix(in oklab, white 10%, transparent);
 }
 
