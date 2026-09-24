@@ -7,6 +7,7 @@ namespace Syriable\Filament\Plugins\MenuBuilder\Rules;
 use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\HttpMethod;
 use Syriable\Filament\Plugins\MenuBuilder\Support\UrlParameters;
 use Syriable\Filament\Plugins\MenuBuilder\Support\UrlResolver;
 
@@ -39,6 +40,14 @@ final class ResolvableRoute implements DataAwareRule, ValidationRule
 
         if (! $resolver->routeExists($route)) {
             $fail(__('menu-builder::menu-builder.validation.route_missing', ['route' => $route ?? '']));
+
+            return;
+        }
+
+        $method = HttpMethod::fromData($this->data['method'] ?? null);
+
+        if (! $resolver->routeAcceptsMethod($route, $method)) {
+            $fail(__('menu-builder::menu-builder.validation.route_method', ['route' => $route, 'method' => $method->value]));
 
             return;
         }

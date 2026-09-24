@@ -4,6 +4,8 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- HTTP methods for links and buttons (`data.method`): GET, POST, PUT, PATCH or DELETE. Anything other than GET renders a submit button inside a form with the CSRF token and method spoofing, e.g. for logout. The route picker offers the routes of the chosen method, and saving rejects routes that don't accept it. The tree shows a method badge.
+
 - Dynamic URLs: link URLs and route parameters accept placeholders resolved per visitor: `{user}`, `{user.attribute}`, `{route.parameter}` and `{query.key}`. Custom placeholders can be added with `Menu::registerUrlParameter()`. Links whose placeholders have no value (e.g. `{user}` for guests) are left out. Unknown placeholders in route parameters are rejected on save.
 
 - The item form picks icons with Filament Icon Hub's `IconSelect` (new dependency `syriable/filament-icon-hub`). It offers a searchable icon grid over every Blade Icons set and custom provider. Items store Icon Hub identifiers (`heroicons:o-home`). Blade Icons names (`heroicon-o-home`) still render everywhere and are shown as the matching icon in the form.

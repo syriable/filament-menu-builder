@@ -9,6 +9,7 @@ use Illuminate\View\ComponentAttributeBag;
 use JsonSerializable;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\AttributeTarget;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\HttpMethod;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Support\HtmlAttributes;
 use Syriable\Filament\Plugins\MenuBuilder\Support\ScreenVisibility;
@@ -47,6 +48,7 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
         public BadgePosition $badgePosition = BadgePosition::End,
         public TextStyle $textStyle = new TextStyle,
         public ScreenVisibility $screens = new ScreenVisibility,
+        public HttpMethod $method = HttpMethod::Get,
     ) {}
 
     public function hasChildren(): bool
@@ -90,6 +92,15 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
         $value = $this->data[$key] ?? null;
 
         return $value === null || $value === '' ? $default : $value;
+    }
+
+    /**
+     * Whether the item submits a form (POST, PUT, PATCH, DELETE) instead of
+     * being a plain link.
+     */
+    public function usesForm(): bool
+    {
+        return $this->url !== null && $this->method->needsForm() && ! $this->isHeading();
     }
 
     public function hasBadge(): bool
@@ -158,6 +169,7 @@ final readonly class ResolvedMenuItem implements Arrayable, JsonSerializable
             'badge_position' => $this->badgePosition->value,
             'text_style' => $this->textStyle->toArray(),
             'screens' => $this->screens->toArray(),
+            'method' => $this->method->value,
             'children' => array_map(static fn (self $child): array => $child->toArray(), $this->children),
         ];
     }

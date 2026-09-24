@@ -168,6 +168,43 @@ Link data is stored in the item's `data` column:
 
 Saving fails when a route does not exist or cannot be generated with the given parameters. If a route is removed from the application later, the item is left out of the built menu instead of breaking the page. Routes that match the patterns in `menu-builder.routes.exclude` (for example `filament.*` or `livewire.*`) are not offered in the route picker.
 
+### HTTP methods (POST, PUT, PATCH, DELETE)
+
+Links and buttons have an **HTTP method**: GET (default), POST, PUT, PATCH or DELETE. A GET item is a normal link. Any other method renders the item as a submit button inside a small form, with the CSRF token and, for PUT, PATCH and DELETE, Laravel's `_method` field. It looks exactly like a link or button of the same kind. This is how a **Logout** item works:
+
+```text
+Type:         Link
+Link to:      Route
+HTTP method:  POST
+Route:        logout
+```
+
+```html
+<form class="mb-form" method="POST" action="https://example.com/logout">
+    <input type="hidden" name="_token" value="…">
+    <button type="submit" class="fi-link … mb-item mb-item-link">Logout</button>
+</form>
+```
+
+- The route picker only offers routes that accept the chosen method. Saving rejects a route that doesn't accept it, for example a GET link to a POST-only route.
+- The form uses `display: contents`, so the item keeps its place in the layout.
+- These items are never marked as the current page, and a dropdown or mega panel doesn't repeat them as a "view all" entry.
+- `ResolvedMenuItem::$method` (an `HttpMethod` enum) and `usesForm()` are available to custom item components.
+
+In a seeder:
+
+```php
+['type' => 'link', 'label' => 'Logout', 'visibility' => 'authenticated', 'data' => [
+    'link_type' => 'route',
+    'route' => 'logout',
+    'method' => 'POST',
+]],
+['type' => 'button', 'label' => 'Delete account', 'color' => 'danger', 'data' => [
+    'url' => '/account',
+    'method' => 'DELETE',
+]],
+```
+
 ### Dynamic URLs and route parameters
 
 URLs and route parameter values can contain placeholders. They are resolved for each visitor every time the menu is built:

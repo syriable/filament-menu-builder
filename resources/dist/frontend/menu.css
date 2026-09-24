@@ -50,6 +50,11 @@
         min-width: 0;
     }
 
+    /* Forms of POST/PUT/PATCH/DELETE items keep the item's place in the layout. */
+    :where(.mb-menu .mb-form) {
+        display: contents;
+    }
+
     :where(.mb-menu .mb-content) {
         display: inline-flex;
         align-items: center;

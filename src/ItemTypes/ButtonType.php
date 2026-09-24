@@ -10,7 +10,9 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\IconPosition;
 use Filament\Support\Enums\Size;
+use Illuminate\Validation\Rule;
 use Override;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\HttpMethod;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\MenuItemType;
 use Syriable\Filament\Plugins\MenuBuilder\MenuRegistry;
@@ -52,6 +54,7 @@ class ButtonType extends MenuItemType
                 'icon_position' => ['nullable', 'in:'.implode(',', array_column(IconPosition::cases(), 'value'))],
                 'url' => ['nullable', 'string', 'max:2048'],
                 'new_tab' => ['nullable', 'boolean'],
+                'method' => ['nullable', Rule::enum(HttpMethod::class)],
             ])
             ->resolveUrlUsing(static fn (array $data): ?string => app(UrlResolver::class)->url(
                 is_string($data['url'] ?? null) ? $data['url'] : null,
@@ -70,10 +73,12 @@ class ButtonType extends MenuItemType
                 ->maxLength(2048)
                 ->live(onBlur: true)
                 ->columnSpanFull(),
+            LinkType::methodField()
+                ->visible(static fn (Get $get): bool => filled($get('url'))),
             Toggle::make('new_tab')
                 ->label(__('menu-builder::menu-builder.fields.new_tab'))
                 ->visible(static fn (Get $get): bool => filled($get('url')))
-                ->columnSpanFull(),
+                ->inline(false),
             ToggleButtons::make('size')
                 ->label(__('menu-builder::menu-builder.fields.button_size'))
                 ->options([

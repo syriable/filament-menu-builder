@@ -59,7 +59,7 @@
     </x-slot>
 
     <div @class(['mb-panel', $dropdownClass])>
-        @if ($item->isLink())
+        @if ($item->isLink() && ! $item->usesForm())
             <x-filament::dropdown.list>
                 <x-filament::dropdown.list.item
                     tag="a"
