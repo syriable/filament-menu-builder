@@ -663,6 +663,46 @@ describe('item form', function (): void {
             ->assertHasActionErrors(['data.screens']);
     });
 
+    it('picks icons with the Icon Hub select', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->assertFormFieldExists('item-fields.icon', fn (Syriable\Filament\Plugins\IconHub\Forms\Components\IconSelect $field): bool => true)
+            ->callMountedAction();
+
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Shop',
+                'icon' => 'heroicons:o-shopping-bag',
+                'data' => ['link_type' => 'url', 'url' => '/shop'],
+            ])
+            ->assertHasNoActionErrors()
+            ->callAction('save');
+
+        expect(Menu::build('header')->last()->icon)->toBe('heroicons:o-shopping-bag');
+    });
+
+    it('shows Blade Icons names of older items in the icon select', function (): void {
+        app(CreateMenuItem::class)->handle('header', [
+            'type' => 'link', 'label' => 'Legacy', 'icon' => 'heroicon-o-home', 'data' => ['link_type' => 'url', 'url' => '/legacy'],
+        ]);
+
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction(TestAction::make('editItem')->arguments(['key' => keyOf('Legacy')]))
+            ->assertSchemaStateSet(['icon' => 'heroicons:o-home']);
+    });
+
+    it('rejects unknown icons in the form', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Shop',
+                'icon' => 'heroicons:o-does-not-exist',
+                'data' => ['link_type' => 'url', 'url' => '/shop'],
+            ])
+            ->assertHasActionErrors(['icon']);
+    });
+
     it('rejects invalid hover colors', function (): void {
         livewire(ManageMenu::class, ['placement' => 'header'])
             ->callAction('createItem', data: [

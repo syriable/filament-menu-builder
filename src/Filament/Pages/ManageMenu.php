@@ -24,6 +24,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Locked;
 use Override;
+use Syriable\Filament\Plugins\IconHub\Forms\Components\IconSelect;
 use Syriable\Filament\Plugins\MenuBuilder\Drafts\MenuDraft;
 use Syriable\Filament\Plugins\MenuBuilder\Drafts\MenuDraftManager;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\AttributeTarget;
@@ -36,6 +37,7 @@ use Syriable\Filament\Plugins\MenuBuilder\Filament\Pages\Concerns\InteractsWithM
 use Syriable\Filament\Plugins\MenuBuilder\MenuItemType;
 use Syriable\Filament\Plugins\MenuBuilder\MenuPlacement;
 use Syriable\Filament\Plugins\MenuBuilder\MenuVisibility;
+use Syriable\Filament\Plugins\MenuBuilder\Support\Icons;
 use Syriable\Filament\Plugins\MenuBuilder\Support\MenuAuthorizer;
 use Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle;
 use Syriable\Filament\Plugins\MenuBuilder\Tree\DropPosition;
@@ -501,10 +503,10 @@ class ManageMenu extends Page
             ->description(__('menu-builder::menu-builder.fields.appearance_help'))
             ->icon(Heroicon::OutlinedSwatch)
             ->schema([
-                TextInput::make('icon')
+                IconSelect::make('icon')
                     ->label(__('menu-builder::menu-builder.fields.icon'))
-                    ->placeholder('heroicon-o-home')
-                    ->maxLength(100),
+                    // Items saved before the picker store Blade Icons names.
+                    ->formatStateUsing(static fn (?string $state): ?string => Icons::toHubId($state)),
                 Select::make('color')
                     ->label(__('menu-builder::menu-builder.fields.color'))
                     ->placeholder(__('menu-builder::menu-builder.fields.default'))

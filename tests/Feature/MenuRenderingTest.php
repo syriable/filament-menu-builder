@@ -118,6 +118,22 @@ describe('root elements', function (): void {
         expect(one(renderMenu([resolved('Sale', ['color' => 'danger'])]), '//a')->getAttribute('class'))->toContain('fi-color-danger');
     });
 
+    it('renders Icon Hub icons', function (): void {
+        $xpath = renderMenu([
+            resolved('Home', ['icon' => 'heroicons:o-home']),
+            resolved('Sale', ['type' => 'button', 'url' => null, 'renderAs' => RenderAs::Button, 'icon' => 'heroicons:o-tag']),
+            resolved('Services', ['url' => null, 'renderAs' => RenderAs::Heading, 'children' => [
+                resolved('Web', ['depth' => 2, 'icon' => 'heroicons:o-globe-alt']),
+            ]]),
+            resolved('Broken', ['icon' => 'heroicons:o-does-not-exist']),
+        ]);
+
+        expect($xpath->query('//a[@href="/home"]//svg')->length)->toBe(1)
+            ->and($xpath->query('//button[contains(@class, "fi-btn")]//svg')->length)->toBe(1)
+            ->and($xpath->query('//a[@href="/web"]//svg')->length)->toBe(1)
+            ->and($xpath->query('//a[@href="/broken"]//svg')->length)->toBe(0);
+    });
+
     it('renders known icons and skips unknown ones', function (): void {
         $xpath = renderMenu([
             resolved('Home', ['icon' => 'heroicon-o-home']),

@@ -40,7 +40,7 @@
                 <span class="mb-toggle-spacer"></span>
             @endif
 
-            @if ($icon = $node->icon ?? $type?->getIcon())
+            @if ($icon = \Syriable\Filament\Plugins\MenuBuilder\Support\Icons::safe($node->icon ?? $type?->getIcon()))
                 <x-filament::icon :icon="$icon" class="mb-node-icon" />
             @endif
 
