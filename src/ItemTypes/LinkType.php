@@ -12,7 +12,9 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Illuminate\Validation\Rule;
 use Override;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\HttpMethod;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\MenuItemType;
 use Syriable\Filament\Plugins\MenuBuilder\MenuRegistry;
@@ -58,6 +60,7 @@ class LinkType extends MenuItemType
                 'route_parameters' => ['nullable', 'array'],
                 'route_parameters.*' => ['nullable', $this->scalarRule()],
                 'new_tab' => ['nullable', 'boolean'],
+                'method' => ['nullable', Rule::enum(HttpMethod::class)],
             ])
             ->resolveUrlUsing(static fn (array $data): ?string => app(UrlResolver::class)->resolve($data));
     }
@@ -83,8 +86,8 @@ class LinkType extends MenuItemType
                 ->inline()
                 ->grouped()
                 ->required()
-                ->live()
-                ->columnSpanFull(),
+                ->live(),
+            static::methodField()->visible($isLink),
             TextInput::make('url')
                 ->label(__('menu-builder::menu-builder.fields.url'))
                 ->placeholder('/about, https://example.com, #pricing, /users/{user}')
@@ -95,8 +98,9 @@ class LinkType extends MenuItemType
                 ->columnSpanFull(),
             Select::make('route')
                 ->label(__('menu-builder::menu-builder.fields.route'))
-                ->options(static fn (): array => app(UrlResolver::class)->selectableRoutes(
+                ->options(static fn (Get $get): array => app(UrlResolver::class)->selectableRoutes(
                     array_values(array_filter(config()->array('menu-builder.routes.exclude', []), is_string(...))),
+                    HttpMethod::fromData($get('method')),
                 ))
                 ->searchable()
                 ->required()
@@ -120,6 +124,22 @@ class LinkType extends MenuItemType
                 ->label(__('menu-builder::menu-builder.fields.new_tab'))
                 ->visible($isLink),
         ];
+    }
+
+    /**
+     * The HTTP method of the link. Anything but GET renders a button that
+     * submits a form, e.g. for a logout link.
+     */
+    public static function methodField(): ToggleButtons
+    {
+        return ToggleButtons::make('method')
+            ->label(__('menu-builder::menu-builder.fields.method'))
+            ->helperText(__('menu-builder::menu-builder.fields.method_help'))
+            ->options(collect(HttpMethod::cases())->mapWithKeys(static fn (HttpMethod $method): array => [$method->value => $method->value])->all())
+            ->default(HttpMethod::Get->value)
+            ->inline()
+            ->grouped()
+            ->live();
     }
 
     protected function scalarRule(): Closure

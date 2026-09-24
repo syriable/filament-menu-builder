@@ -64,6 +64,12 @@
                 <x-filament::badge size="sm" color="gray">{{ __('menu-builder::menu-builder.tree.inactive') }}</x-filament::badge>
             @endif
 
+            @php($method = \Syriable\Filament\Plugins\MenuBuilder\Enums\HttpMethod::fromData($node->data['method'] ?? null))
+
+            @if ($method->needsForm())
+                <x-filament::badge size="sm" color="info">{{ $method->value }}</x-filament::badge>
+            @endif
+
             @php($screens = $node->screens())
 
             @unless ($screens->isAlways())

@@ -11,6 +11,7 @@ use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Syriable\Filament\Plugins\MenuBuilder\Data\ResolvedMenuItem;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\HttpMethod;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Support\MenuRepository;
 use Syriable\Filament\Plugins\MenuBuilder\Support\UrlParameters;
@@ -149,7 +150,9 @@ final readonly class MenuBuilder
             }
 
             $children = $this->resolveChildren($tree, $key, $visible, $records, $current, $locale, $depth + 1);
-            $isCurrent = $current !== null && $url !== null && $this->normalizeUrl($url) === $current;
+            $method = $type->hasUrl() ? HttpMethod::fromData($node->data['method'] ?? null) : HttpMethod::Get;
+            // Only pages are "current": a POST or DELETE link is an action.
+            $isCurrent = $current !== null && $url !== null && $method === HttpMethod::Get && $this->normalizeUrl($url) === $current;
 
             $items[] = new ResolvedMenuItem(
                 id: (int) $node->id,
@@ -172,6 +175,7 @@ final readonly class MenuBuilder
                 badgePosition: $node->badgePosition(),
                 textStyle: $node->textStyle(),
                 screens: $node->screens(),
+                method: $method,
             );
         }
 

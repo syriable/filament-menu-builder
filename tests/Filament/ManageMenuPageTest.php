@@ -732,6 +732,36 @@ describe('item form', function (): void {
             ->assertHasActionErrors(['data.route']);
     });
 
+    it('creates POST links from the form', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->mountAction('createItem')
+            ->fillForm(['type' => 'link'])
+            ->assertFormFieldVisible('item-fields.data.method')
+            ->callMountedAction();
+
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Send',
+                'data' => ['link_type' => 'route', 'method' => 'POST', 'route' => 'contact.store'],
+            ])
+            ->assertHasNoActionErrors()
+            ->assertSee('POST')
+            ->callAction('save');
+
+        expect(Menu::build('header')->last()->method)->toBe(Syriable\Filament\Plugins\MenuBuilder\Enums\HttpMethod::Post);
+    });
+
+    it('rejects routes that do not accept the chosen method', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'Send',
+                'data' => ['link_type' => 'route', 'method' => 'GET', 'route' => 'contact.store'],
+            ])
+            ->assertHasActionErrors(['data.route']);
+    });
+
     it('rejects invalid hover colors', function (): void {
         livewire(ManageMenu::class, ['placement' => 'header'])
             ->callAction('createItem', data: [

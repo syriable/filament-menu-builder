@@ -56,10 +56,16 @@
         :attributes="$item->itemAttributes()->class(['mb-item', 'mb-item-heading', $itemClass])"
     >{{ $label }}</x-filament::dropdown.header>
 @else
+    @php($usesForm = $item->usesForm())
+
+    @if ($usesForm)
+        @include('menu-builder::frontend.form-open')
+    @endif
+
     <x-filament::dropdown.list.item
-        :tag="$item->url !== null ? 'a' : 'button'"
-        :href="$item->url"
-        :target="$item->openInNewTab ? '_blank' : null"
+        :tag="$item->url !== null && ! $usesForm ? 'a' : 'button'"
+        :href="$usesForm ? null : $item->url"
+        :target="$item->openInNewTab && ! $usesForm ? '_blank' : null"
         :icon="$icon"
         :color="$item->color ?? 'gray'"
         :badge="$badge"
@@ -74,9 +80,14 @@
             ])
             ->merge(array_filter([
                 'aria-current' => $item->isCurrent ? 'page' : null,
-                'rel' => $item->openInNewTab && $item->url !== null ? 'noopener noreferrer' : null,
+                'rel' => $item->openInNewTab && $item->url !== null && ! $usesForm ? 'noopener noreferrer' : null,
+                'type' => $usesForm ? 'submit' : null,
             ]))"
     >{{ $label }}</x-filament::dropdown.list.item>
+
+    @if ($usesForm)
+        @include('menu-builder::frontend.form-close')
+    @endif
 @endif
 
 @if ($wrapped)

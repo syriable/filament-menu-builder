@@ -24,7 +24,7 @@
     data-mb-mega-panel
     data-mb-mega-columns="{{ MegaColumns::for($item)->value }}"
 >
-    @if ($item->isLink())
+    @if ($item->isLink() && ! $item->usesForm())
         <div class="mb-mega-view-all">
             <x-filament::link
                 tag="a"

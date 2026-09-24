@@ -3,6 +3,9 @@
     links use <x-filament::link>, buttons <x-filament::button> and headings a
     semibold <x-filament::link> rendered as $headingTag (default <span>).
 
+    Links and buttons with a POST, PUT, PATCH or DELETE method become submit
+    buttons inside a form (see frontend.form-open), e.g. for logout.
+
     With `trigger`, the item opens a dropdown: it becomes a <button> (its page,
     if any, is listed as the first dropdown entry) and gets a chevron.
 
@@ -50,13 +53,26 @@
         ]));
 
     $label = view('menu-builder::frontend.label', ['item' => $item, 'trigger' => $trigger]);
+    $usesForm = ! $trigger && $item->usesForm();
+
+    // An administrator's type attribute wins, except that form items always submit.
+    $type = $usesForm ? 'submit' : ($elementAttributes->get('type') ?: 'button');
+
+    if ($usesForm) {
+        $elementAttributes = $elementAttributes->except(['rel', 'type']);
+    }
 @endphp
+
+@if ($usesForm)
+    @include('menu-builder::frontend.form-open')
+@endif
 
 @if ($item->isButton())
     <x-filament::button
-        :tag="! $trigger && $item->url !== null ? 'a' : 'button'"
-        :href="$trigger ? null : $item->url"
-        :target="! $trigger && $item->openInNewTab ? '_blank' : null"
+        :tag="! $trigger && ! $usesForm && $item->url !== null ? 'a' : 'button'"
+        :type="$type"
+        :href="$trigger || $usesForm ? null : $item->url"
+        :target="! $trigger && ! $usesForm && $item->openInNewTab ? '_blank' : null"
         :color="$item->color ?? 'primary'"
         :size="$item->buttonOption('size', 'md')"
         :outlined="(bool) $item->buttonOption('outlined', false)"
@@ -68,9 +84,10 @@
     >{{ $label }}</x-filament::button>
 @elseif ($item->isLink() || $trigger)
     <x-filament::link
-        :tag="! $trigger && $item->isLink() ? 'a' : 'button'"
-        :href="! $trigger && $item->isLink() ? $item->url : null"
-        :target="! $trigger && $item->openInNewTab ? '_blank' : null"
+        :tag="! $trigger && ! $usesForm && $item->isLink() ? 'a' : 'button'"
+        :type="$type"
+        :href="! $trigger && ! $usesForm && $item->isLink() ? $item->url : null"
+        :target="! $trigger && ! $usesForm && $item->openInNewTab ? '_blank' : null"
         :color="$color"
         :icon="$icon"
         :weight="$item->isHeading() ? 'semibold' : null"
@@ -88,4 +105,8 @@
         :badge-color="$item->badgeColor ?? 'primary'"
         :attributes="$elementAttributes"
     >{{ $label }}</x-filament::link>
+@endif
+
+@if ($usesForm)
+    @include('menu-builder::frontend.form-close')
 @endif

@@ -9,6 +9,7 @@ use Illuminate\Routing\Exceptions\UrlGenerationException;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Str;
+use Syriable\Filament\Plugins\MenuBuilder\Enums\HttpMethod;
 
 /**
  * Central place to turn link data into a URL.
@@ -106,12 +107,25 @@ class UrlResolver
     }
 
     /**
-     * Named GET routes that can be offered to administrators.
+     * Whether the named route accepts the HTTP method (GET includes HEAD).
+     */
+    public function routeAcceptsMethod(?string $name, HttpMethod $method): bool
+    {
+        if (! $this->routeExists($name)) {
+            return false;
+        }
+
+        return in_array($method->value, $this->router->getRoutes()->getByName((string) $name)?->methods() ?? [], true);
+    }
+
+    /**
+     * Named routes accepting the given method that can be offered to
+     * administrators.
      *
      * @param  list<string>  $exclude  Route name patterns to hide.
      * @return array<string, string> Route name => label.
      */
-    public function selectableRoutes(array $exclude = []): array
+    public function selectableRoutes(array $exclude = [], HttpMethod $method = HttpMethod::Get): array
     {
         $routes = [];
 
@@ -119,7 +133,7 @@ class UrlResolver
         foreach ($this->router->getRoutes()->getRoutes() as $route) {
             $name = $route->getName();
 
-            if ($name === null || ! in_array('GET', $route->methods(), true) || Str::is($exclude, $name)) {
+            if ($name === null || ! in_array($method->value, $route->methods(), true) || Str::is($exclude, $name)) {
                 continue;
             }
 
