@@ -11,6 +11,9 @@ uses(TestCase::class)
     ->beforeEach(fn () => Syriable\Filament\Plugins\MenuBuilder\Tests\Fixtures\MenuItemPolicy::$denied = [])
     ->in('Unit', 'Feature', 'Filament');
 
+uses(Syriable\Filament\Plugins\MenuBuilder\Tests\Placement\ClusterTestCase::class)->in('Placement/Cluster');
+uses(Syriable\Filament\Plugins\MenuBuilder\Tests\Placement\ResourceTestCase::class)->in('Placement/Resource');
+
 /**
  * Registers the placements used throughout the test suite.
  */

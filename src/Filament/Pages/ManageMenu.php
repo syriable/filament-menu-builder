@@ -109,10 +109,10 @@ class ManageMenu extends Page
     #[Override]
     public function getBreadcrumbs(): array
     {
-        return [
+        return static::withParentBreadcrumbs([
             MenuPlacements::getUrl() => $this->translate('navigation.label'),
             $this->getTitle() instanceof Htmlable ? $this->getTitle()->toHtml() : $this->getTitle(),
-        ];
+        ]);
     }
 
     public function findPlacement(): ?MenuPlacement

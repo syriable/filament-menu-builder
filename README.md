@@ -72,6 +72,32 @@ public function panel(Panel $panel): Panel
 }
 ```
 
+### Placing the pages in a cluster or under a resource
+
+By default, **Menus** is a top-level navigation item. You can place it, and the menu editor pages, inside one of your own clusters or resources instead.
+
+**In a cluster.** The pages get the cluster's URL prefix (`/admin/settings/menus`), appear in its sub-navigation and breadcrumbs, and leave the main navigation:
+
+```php
+MenuBuilderPlugin::make()->cluster(\App\Filament\Clusters\Settings::class)
+```
+
+**Under a resource.** The **Menus** navigation item is nested below the resource's item, in the resource's navigation group, and the resource leads the breadcrumbs (`Pages › Menus › Header`). If the resource belongs to a cluster, the menu pages join that cluster too:
+
+```php
+MenuBuilderPlugin::make()->resource(\App\Filament\Resources\PageResource::class)
+```
+
+Filament requires a navigation item with children to have an icon, so give that resource a `$navigationIcon`.
+
+**Under any navigation item**, by its label:
+
+```php
+MenuBuilderPlugin::make()->navigationParentItem('Content')->navigationGroup('Website')
+```
+
+An explicit `navigationGroup()` or `navigationParentItem()` wins over the resource's. The cluster is fixed when the panel registers the plugin. In an application with several panels, it applies to the menu pages of every panel.
+
 ### The item form
 
 The form that creates and edits items opens as a slide-over or a centered modal. Set this and its width in `config/menu-builder.php`:

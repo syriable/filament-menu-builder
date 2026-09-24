@@ -50,6 +50,23 @@ class MenuPlacements extends Page
     }
 
     #[Override]
+    public static function getNavigationParentItem(): ?string
+    {
+        return static::plugin()?->getNavigationParentItem() ?? parent::getNavigationParentItem();
+    }
+
+    /**
+     * @return array<int|string, string>
+     */
+    #[Override]
+    public function getBreadcrumbs(): array
+    {
+        $breadcrumbs = static::withParentBreadcrumbs([]);
+
+        return $breadcrumbs === [] ? [] : [...$breadcrumbs, $this->getTitle() instanceof Htmlable ? $this->getTitle()->toHtml() : $this->getTitle()];
+    }
+
+    #[Override]
     public static function getNavigationGroup(): string|UnitEnum|null
     {
         return static::plugin()?->getNavigationGroup() ?? parent::getNavigationGroup();
