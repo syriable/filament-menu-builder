@@ -31,6 +31,7 @@
         "syriable/filament-icon-hub": "^0.1"
     },
     "require-dev": {
+        "bezhansalleh/filament-shield": "^4.3",
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.18",
         "nunomaduro/collision": "^8.6",
@@ -42,6 +43,9 @@
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0"
+    },
+    "suggest": {
+        "bezhansalleh/filament-shield": "Protects the menu pages with Shield page permissions."
     },
     "autoload": {
         "psr-4": {

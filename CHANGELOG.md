@@ -4,6 +4,7 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- Filament Shield support: when the panel registers the Shield plugin, the menu list and editor require their Shield page permissions (`View:MenuPlacements`, `View:ManageMenu`), on top of the placement policy. `MenuBuilderPlugin::shield(false)` turns it off, `shield()` forces it. Shield is a suggested package, not a dependency.
 - Place the menu pages in a cluster (`MenuBuilderPlugin::cluster()`), under a resource (`resource()`, which nests the navigation item below the resource and prepends it to the breadcrumbs), or under any navigation item (`navigationParentItem()`).
 - Fix: icons picked with the Icon Hub select are saved as Blade Icons names again (`heroicon-m-user` rather than `heroicons:m-user`), and `Menu::build()` converts items already saved as identifiers. Custom templates that pass `$item->icon` to Filament components no longer throw `SvgNotFound`. Icons without a Blade Icons name (uploads, remote providers) stay identifiers; render them with `Support\Icons::safe()`.
 - HTTP methods for links and buttons (`data.method`): GET, POST, PUT, PATCH or DELETE. Anything other than GET renders a submit button inside a form with the CSRF token and method spoofing, e.g. for logout. The route picker offers the routes of the chosen method, and saving rejects routes that don't accept it. The tree shows a method badge.

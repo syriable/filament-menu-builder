@@ -28,7 +28,7 @@ class MenuPlacements extends Page
     #[Override]
     public static function canAccess(): bool
     {
-        return static::canViewAnyPlacement();
+        return static::passesShield() && static::canViewAnyPlacement();
     }
 
     #[Override]

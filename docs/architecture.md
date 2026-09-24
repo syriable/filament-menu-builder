@@ -227,6 +227,8 @@ Translations live in `data.label_translations` (locale => label), next to the ot
 
 `MenuAuthorizer` asks the policy registered for the menu item model for `viewAny`, `create`, `update`, `reorder`, `delete` and `publish`, with the placement key as the argument. Without a policy, access follows Filament's default: panel users may manage menus. Filament actions use `->authorize()`, so unauthorized actions are hidden and cannot be mounted or called. `moveItem()` checks `reorder` itself.
 
+The pages optionally check Filament Shield page permissions before the policy. `InteractsWithMenuPlugin::getShieldPermission()` reads the page's key from `FilamentShield::getPages()` (so Shield's key builder and `pages.exclude` apply), and `canAccess()` requires `can(<permission>)` and at least one viewable placement. The check is on when the panel registers the `filament-shield` plugin, or when `MenuBuilderPlugin::shield()` forces it; Shield stays a suggested package, referenced only behind `class_exists()`.
+
 ## Decisions to review before 1.0
 
 1. **Draft store = cache.** This is simple and fast, but a cache flush discards open drafts. The editor detects this and starts a fresh draft with a warning. A database store would make drafts durable.
