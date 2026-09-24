@@ -77,8 +77,10 @@ describe('mega variant rendering', function (): void {
             ->toContain('href="/design/web/landing"')
             ->toContain('New');
 
-        expect(substr_count($html, 'data-mb-mega-columns='))->toBe(1)
-            ->and(substr_count($html, 'data-mb-mega-panel-id='))->toBe(1);
+        $markup = (string) preg_replace('/<style\b[^>]*>.*?<\/style>/s', '', $html);
+
+        expect(substr_count($markup, 'data-mb-mega-columns='))->toBe(1)
+            ->and(substr_count($markup, 'data-mb-mega-panel-id='))->toBe(1);
     });
 
     it('links the category page from its panel for touch visitors', function (): void {
