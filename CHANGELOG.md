@@ -5,6 +5,7 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 ## Unreleased
 
 - Added: `mega` frontend variant with `MegaMenu::register()`, the `mega-category` item type and `menu-builder.mega` config.
+- Mega panels may extend past the menu and are kept inside the viewport instead, with a `--mb-mega-panel-viewport-gap` (16px) from its edges.
 
 - Fix: hover underlines (the default link underline and the "On hover" and "Always" text options) were never painted, because the label sits in an inline-flex box that the link's text decoration does not reach. Underlines are now drawn on the label.
 - Dropdown chevrons animate with the open state: the first level turns up, nested levels nudge towards their panel. Honors `prefers-reduced-motion`.

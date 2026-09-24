@@ -7,9 +7,10 @@
  * - From the configured breakpoint up, a category's panel opens on hover
  *   with a short delay, and closes with a short delay so the pointer can
  *   travel into it. Moving to another category switches panels at once.
- * - A panel is aligned with the inline start of its category and kept inside
- *   the <nav>, which is its containing block. The panel width follows from
- *   its column count in CSS, so it is placed in the same frame it opens.
+ * - A panel is aligned with the inline start of its category. It may extend
+ *   past the <nav>, its containing block, but is kept inside the viewport
+ *   minus --mb-mega-panel-viewport-gap. The panel width follows from its
+ *   column count in CSS, so it is placed in the same frame it opens.
  * - Touch: the first tap on a category opens its panel, the second one
  *   follows the link. Keyboard: ArrowDown opens the panel of the focused
  *   category, Escape closes it, and focus leaving the panel closes it.
@@ -29,13 +30,18 @@ const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
 
 /**
  * Distance in pixels from the container's inline start edge to the panel's
- * inline start edge: aligned with the trigger, kept inside the container.
+ * inline start edge: aligned with the trigger, kept inside the bounds (the
+ * container when none are given). The result is negative when the panel
+ * starts before the container. A panel wider than the bounds starts at their
+ * inline start edge.
  */
-function panelInsetStart({ container, trigger, panelWidth, rtl }) {
-    const width = container.right - container.left
-    const start = rtl ? container.right - trigger.right : trigger.left - container.left
+function panelInsetStart({ container, bounds = container, trigger, panelWidth, rtl }) {
+    const edge = (x) => (rtl ? container.right - x : x - container.left)
+    const start = edge(rtl ? trigger.right : trigger.left)
+    const min = edge(rtl ? bounds.right : bounds.left)
+    const max = edge(rtl ? bounds.left : bounds.right) - panelWidth
 
-    return clamp(start, 0, Math.max(0, width - panelWidth))
+    return clamp(start, min, Math.max(min, max))
 }
 
 /**
@@ -389,9 +395,11 @@ export default function menuBuilderMega({ openDelay = 100, closeDelay = 150, bre
         place(entry, panel) {
             const nav = this.$el.getBoundingClientRect()
             const left = nav.left + this.$el.clientLeft
+            const gap = parseFloat(getComputedStyle(panel).getPropertyValue('--mb-mega-panel-viewport-gap')) || 0
 
             panel.style.insetInlineStart = `${panelInsetStart({
                 container: { left, right: left + this.$el.clientWidth },
+                bounds: { left: gap, right: document.documentElement.clientWidth - gap },
                 trigger: entry.getBoundingClientRect(),
                 panelWidth: panel.offsetWidth,
                 rtl: this.isRtl(),

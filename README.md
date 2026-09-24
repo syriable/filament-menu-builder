@@ -438,7 +438,7 @@ The script is an Alpine component that Filament loads on demand with `x-load`, s
 #### Behavior
 
 - **Scrolling.** When the categories do not fit, an arrow appears on each side that has more of them. A click scrolls by most of the visible width, and touch and trackpad scrolling work too. Categories that are cut off ignore the pointer, so a panel never opens from under an arrow. Keyboard focus scrolls a category into view.
-- **Panels.** A panel is aligned with the start of its category and moved back when it would leave the menu, so a panel near the end lines up with the menu's end edge. Scrolling the row closes the open panel.
+- **Panels.** A panel is aligned with the start of its category and may extend past the menu. It is moved back only when it would leave the viewport, and keeps `--mb-mega-panel-viewport-gap` from its edges. Scrolling the row closes the open panel.
 - **Screen sizes.** Below `panel-breakpoint` the row still scrolls, and a category is a plain link. For phones, render the same placement with `<x-menu-builder::sidebar>` (the `tree` variant).
 - **Touch.** On a touch screen above the breakpoint, the first tap opens the panel and the second tap follows the link. The panel then starts with an "All of …" link to the category page.
 - **Keyboard.** `Tab` moves through the categories, `ArrowDown` opens the panel of the focused category and focuses its first link, `Escape` closes it and returns focus, and tabbing out of a panel closes it. Categories get `aria-expanded` and `aria-controls`.
@@ -466,6 +466,7 @@ The panel width follows from its columns, so it is known before the panel opens.
 | `--mb-mega-panel-padding-block`, `--mb-mega-panel-padding-inline` | `1.25rem`, `2rem` | panel padding |
 | `--mb-mega-panel-background`, `--mb-mega-panel-border-color`, `--mb-mega-panel-border-width` | white / gray-900 in dark mode | panel surface |
 | `--mb-mega-panel-shadow`, `--mb-mega-panel-z-index` | subtle, `40` | panel elevation |
+| `--mb-mega-panel-viewport-gap` | `16px` | minimum space between a panel and the viewport edges |
 | `--mb-mega-item-gap` | `1.25rem` | minimum space between categories |
 | `--mb-mega-strip-padding-block` | `0.625rem` | height of the category row |
 | `--mb-mega-indicator-color`, `--mb-mega-indicator-size` | primary, `3px` | line under the hovered, open or active category |
@@ -481,7 +482,7 @@ The panel width follows from its columns, so it is known before the panel opens.
 
 Panel entries use the dropdown colors (`--mb-dropdown-color` and friends), not the menu's `--mb-color`, so a white category row in a dark header still gets readable panels.
 
-The `<nav>` is the containing block of the panels. Don't give the scrolling row (`.mb-mega-strip`), its list or its entries a `position`, or the panels will be clipped.
+The `<nav>` is the containing block of the panels. Don't give the scrolling row (`.mb-mega-strip`), its list or its entries a `position`, or the panels will be clipped. Panels can extend past the `<nav>`, so an ancestor with `overflow: hidden` clips them too.
 
 ### Filament on your frontend
 
