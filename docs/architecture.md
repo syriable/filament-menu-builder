@@ -215,6 +215,10 @@ The item form uses Icon Hub's `IconSelect`, which stores `provider:name` identif
 
 `menu-builder.locales` and `menu-builder.item_form` (`slide_over`, `width`) configure the editor. The plugin methods of the same purpose override them, and the page reads them through `InteractsWithMenuPlugin::settings()`, which falls back to a plugin built from the config when the page runs outside a panel that registered the plugin.
 
+## Page placement
+
+Filament reads a page's cluster while the panel registers its pages, before any request. `MenuBuilderPlugin::register()` therefore hands the cluster to `MenuPlacements` and `ManageMenu` through `useCluster()`. It is kept in a static declared by `InteractsWithMenuPlugin`, not in `Page::$cluster`. That base property is shared by every page class in the panel, so assigning it would move all of them into the cluster. The resource placement uses Filament's `navigationParentItem` and group, resolved from the plugin at request time. Breadcrumbs of both pages go through `withParentBreadcrumbs()`, which prepends the resource's index page and then the cluster's breadcrumb.
+
 ## Label translations
 
 Translations live in `data.label_translations` (locale => label), next to the other shared rendering keys, so they need no migration and they travel with drafts. `MenuTreeGuard` validates the locale keys and the string length. `MenuNode::translatedLabel()` looks up the exact locale, then its language. `MenuBuilder` prefers that over `MenuItemType::resolveLabel()`, which keeps the item type API unchanged. The locales offered in the form come from `MenuBuilderPlugin::locales()`: only the editor needs them, and the frontend reads whatever translations are stored.

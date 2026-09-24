@@ -53,8 +53,16 @@ abstract class TestCase extends Orchestra
             WidgetsServiceProvider::class,
             IconHubServiceProvider::class,
             MenuBuilderServiceProvider::class,
-            TestPanelProvider::class,
+            $this->panelProvider(),
         ];
+    }
+
+    /**
+     * @return class-string
+     */
+    protected function panelProvider(): string
+    {
+        return TestPanelProvider::class;
     }
 
     #[Override]
