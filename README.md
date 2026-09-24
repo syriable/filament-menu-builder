@@ -1000,6 +1000,32 @@ class MenuItemPolicy
 
 Once a policy is registered, abilities it does not define are denied. Without a policy, every user who can access the panel may manage menus, which matches Filament's default behavior. Unauthorized actions are hidden in the UI and refused on the server.
 
+### Filament Shield
+
+The pages work with [Filament Shield](https://filamentphp.com/plugins/bezhansalleh-shield) page permissions. When the panel registers the Shield plugin, each page requires its Shield permission, and the navigation item is hidden without it:
+
+| Page | Permission (default key format) |
+| --- | --- |
+| Menu list (`MenuPlacements`) | `View:MenuPlacements` |
+| Menu editor (`ManageMenu`) | `View:ManageMenu` |
+
+Generate the permissions and assign them to roles as usual:
+
+```bash
+php artisan shield:generate --all --panel=admin
+```
+
+Both permissions are needed to edit menus: the first opens the list, the second the editor. Shield's own key format settings (prefix, separator, case) apply; the package reads the keys from Shield. Your placement policy, if any, still applies on top of the Shield permissions.
+
+To exclude a page from Shield, add it to `pages.exclude` in `config/filament-shield.php`; it is then only checked by the policy. To opt out entirely, or to force the check on a panel that does not register the Shield plugin:
+
+```php
+MenuBuilderPlugin::make()->shield(false); // never check Shield permissions
+MenuBuilderPlugin::make()->shield();      // always check them
+```
+
+Shield is optional: nothing changes when it is not installed.
+
 ## Caching
 
 The published tree of each placement is cached under `menu-builder.{placement}` until the placement is saved again. Only that placement's key is cleared. Visibility, the current page and URLs are resolved per request, so one cache entry serves every visitor. Drafts are never cached as published data.

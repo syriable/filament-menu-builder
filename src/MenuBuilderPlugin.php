@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Syriable\Filament\Plugins\MenuBuilder;
 
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use Filament\Clusters\Cluster;
 use Filament\Contracts\Plugin;
+use Filament\Facades\Filament;
 use Filament\Panel;
 use Filament\Resources\Resource as FilamentResource;
 use Filament\Support\Enums\Width;
@@ -48,6 +50,8 @@ class MenuBuilderPlugin implements Plugin
     protected ?string $resource = null;
 
     protected ?string $navigationParentItem = null;
+
+    protected ?bool $shield = null;
 
     public static function make(): static
     {
@@ -143,6 +147,27 @@ class MenuBuilderPlugin implements Plugin
     public function getNavigationParentItem(): ?string
     {
         return $this->navigationParentItem ?? ($this->resource === null ? null : $this->resource::getNavigationLabel());
+    }
+
+    /**
+     * Protects the menu pages with Filament Shield page permissions
+     * (`View:MenuPlacements` and `View:ManageMenu` by default). Null, the
+     * default, enables it when the panel registers the Shield plugin.
+     */
+    public function shield(?bool $condition = true): static
+    {
+        $this->shield = $condition;
+
+        return $this;
+    }
+
+    public function usesShield(?Panel $panel = null): bool
+    {
+        if ($this->shield === false || ! class_exists(FilamentShield::class)) {
+            return false;
+        }
+
+        return $this->shield ?? ($panel ?? Filament::getCurrentOrDefaultPanel())?->hasPlugin('filament-shield') ?? false;
     }
 
     public function navigation(bool $condition = true): static

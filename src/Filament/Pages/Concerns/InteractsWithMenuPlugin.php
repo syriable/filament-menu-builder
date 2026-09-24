@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Syriable\Filament\Plugins\MenuBuilder\Filament\Pages\Concerns;
 
+use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use Filament\Clusters\Cluster;
 use Filament\Facades\Filament;
 use Syriable\Filament\Plugins\MenuBuilder\MenuBuilderPlugin;
@@ -84,6 +85,37 @@ trait InteractsWithMenuPlugin
     protected static function authorizer(): MenuAuthorizer
     {
         return app(MenuAuthorizer::class);
+    }
+
+    /**
+     * The Filament Shield permission of this page, e.g. `View:MenuPlacements`,
+     * or null when Shield is not used or excludes the page.
+     */
+    public static function getShieldPermission(): ?string
+    {
+        if (! static::settings()->usesShield()) {
+            return null;
+        }
+
+        $page = FilamentShield::getPages()[static::class] ?? null;
+        $permissions = is_array($page) && is_array($page['permissions'] ?? null) ? $page['permissions'] : [];
+        $permission = array_key_first($permissions);
+
+        return is_string($permission) ? $permission : null;
+    }
+
+    /**
+     * Whether the current user has the Shield permission of this page.
+     */
+    protected static function passesShield(): bool
+    {
+        $permission = static::getShieldPermission();
+
+        if ($permission === null) {
+            return true;
+        }
+
+        return Filament::auth()->user()?->can($permission) ?? false;
     }
 
     /**
