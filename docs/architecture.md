@@ -13,9 +13,9 @@ This document explains how the package is built and why. Read it before changing
 ```
 config/menu-builder.php              model, placements, cache, drafts, route picker
 database/migrations/…stub            menu_items table
-resources/dist/                      editor: Alpine component (drag & drop) + stylesheet
-resources/dist/frontend/             frontend: structural menu.css + dependency-free menu.js
-resources/views/components/          frontend Blade components: menu, items, item, badge, header, footer, sidebar
+resources/dist/                      editor: Alpine component (drag & drop) + stylesheet; mega menu Alpine component
+resources/dist/frontend/             frontend: structural menu.css + dependency-free menu.js; mega.css
+resources/views/components/          frontend Blade components: menu, items, item, badge, header, footer, sidebar, mega (+ mega/*)
 resources/views/filament/            Filament pages and the recursive editor tree partial
 resources/lang/en/                   translations
 src/
@@ -27,8 +27,9 @@ src/
 ├── MenuPlacement.php                placement definition + structural rules
 ├── MenuItemType.php                 item type definition (form, rules, resolvers)
 ├── MenuVisibility.php               named visibility rule
+├── MegaMenu.php                     opt-in registration of the mega placement preset and item type
 ├── MenuBuilder.php                  published tree → ResolvedMenuItem[]
-├── ItemTypes/                       built-in heading, link and button types
+├── ItemTypes/                       built-in heading, link and button types; MegaCategoryType (opt-in)
 ├── Tree/
 │   ├── MenuNode.php                 immutable item attributes
 │   ├── MenuTree.php                 in-memory adjacency list (the one tree implementation)
@@ -43,7 +44,7 @@ src/
 │                                    HtmlAttributes (validate/normalize/escape), FrontendAssets
 ├── Rules/ResolvableRoute.php
 ├── Data/ResolvedMenuItem.php        frontend DTO (the rendering contract)
-├── Enums/                           RenderAs, AttributeTarget, BadgePosition
+├── Enums/                           RenderAs, AttributeTarget, BadgePosition, MegaColumns
 ├── Events/MenuPublished.php
 ├── Exceptions/
 ├── Filament/Pages/                  MenuPlacements (landing), ManageMenu (editor)
@@ -136,6 +137,16 @@ Persistent drafts or revisions only need a different `DraftStore` binding. The e
 - While the draft is dirty, `beforeunload` and `livewire:navigate` ask for confirmation.
 
 Alpine names on the root are specific (`toggleItem`, `expandAllItems`, and so on) because Filament's section component defines `isCollapsed` and similar properties in enclosing Alpine scopes.
+
+## Mega variant
+
+`variant="mega"` is a marketplace-style category bar. `menu` hands it to `mega.menu` after printing the assets; the other variants never touch it, and no core class depends on the mega classes (an architecture test enforces this).
+
+- **Opt-in data shape.** `MegaMenu::register()` registers `MegaCategoryType` (a `LinkType` with a `columns` field in `data`, so it keeps the URL and route picker) and a placement preset: categories at the root, `heading` or `link` groups below them, `link`s inside the groups, three levels. The tree guard enforces it like any other placement. The type is not registered by default, because placements without type rules would offer it everywhere.
+- **Deterministic panel width.** `MegaColumns::for()` reads `data.columns`, or uses one column per group up to four. The panel gets `data-mb-mega-columns`, which sets `--mb-mega-cols`, and its width is computed from that in CSS. The script can therefore open and place a panel in one task without measuring its content first.
+- **Containing block outside the scroller.** The `<nav>` is `position: relative`; the strip is `overflow-x: auto` but not positioned. Overflow only clips descendants whose containing block is the scroller or inside it, so the panels (absolute, containing block = `<nav>`) escape the clipping and stay put while the strip scrolls. Their vertical position is their static position below the category row; only `inset-inline-start` is set by the script: aligned with the category, clamped to the `<nav>`. Floating UI was not used because it anchors a panel to its trigger, and `x-teleport` would break the hover path between a category and its panel.
+- **Script.** `menu-builder-mega.js` is an Alpine component loaded with Filament's `x-load`, like the editor's tree. All listeners are delegated to the `<nav>` and the markup only has `data-mb-mega-*` hooks, so custom item components need no Alpine code. The geometry (panel offset, scroll state, obscured items) consists of pure functions attached to the export and tested with `node --test`.
+- **No Livewire.** `Menu::build()` is cached and the behavior is client-side, so the variant is a plain Blade component.
 
 ## Frontend builder
 
