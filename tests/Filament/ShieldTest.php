@@ -129,3 +129,27 @@ it('still applies the placement policies', function (): void {
 
     $this->get(MenuPlacements::getUrl())->assertForbidden();
 });
+
+it('shows placements without a link when the editor is not allowed', function (): void {
+    menuPlugin()->shield();
+    Gate::define('View:MenuPlacements', fn (): bool => true);
+
+    $this->get(MenuPlacements::getUrl())
+        ->assertOk()
+        ->assertSee('Header')
+        ->assertSee('View only')
+        ->assertSee('mb-placement-card-disabled', escape: false)
+        ->assertDontSee(ManageMenu::getUrl(['placement' => 'header']));
+});
+
+it('links placements when the editor is allowed', function (): void {
+    menuPlugin()->shield();
+    Gate::define('View:MenuPlacements', fn (): bool => true);
+    Gate::define('View:ManageMenu', fn (): bool => true);
+
+    $this->get(MenuPlacements::getUrl())
+        ->assertOk()
+        ->assertSee(ManageMenu::getUrl(['placement' => 'header']))
+        ->assertDontSee('View only')
+        ->assertDontSee('mb-placement-card-disabled', escape: false);
+});

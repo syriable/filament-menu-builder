@@ -10,7 +10,17 @@
     @else
         <div class="mb-editor mb-placements">
             @foreach ($placements as $entry)
-                <a href="{{ $entry['url'] }}" class="mb-placement-card" wire:key="placement-{{ $entry['placement']->getKey() }}">
+                @php($tag = $entry['url'] === null ? 'div' : 'a')
+
+                <{{ $tag }}
+                    @if ($entry['url'] !== null)
+                        href="{{ $entry['url'] }}"
+                    @else
+                        aria-disabled="true"
+                    @endif
+                    @class(['mb-placement-card', 'mb-placement-card-disabled' => $entry['url'] === null])
+                    wire:key="placement-{{ $entry['placement']->getKey() }}"
+                >
                     <div class="mb-placement-card-header">
                         @if ($icon = $entry['placement']->getIcon())
                             <x-filament::icon :icon="$icon" class="mb-placement-card-icon" />
@@ -25,9 +35,13 @@
 
                     <div class="mb-placement-card-footer">
                         <span>{{ trans_choice('menu-builder::menu-builder.placements.items', $entry['count'], ['count' => $entry['count']]) }}</span>
-                        <span class="mb-placement-card-link">{{ __('menu-builder::menu-builder.placements.manage') }} &rarr;</span>
+                        @if ($entry['url'] !== null)
+                            <span class="mb-placement-card-link">{{ __('menu-builder::menu-builder.placements.manage') }} &rarr;</span>
+                        @else
+                            <span class="mb-placement-card-locked">{{ __('menu-builder::menu-builder.placements.locked') }}</span>
+                        @endif
                     </div>
-                </a>
+                </{{ $tag }}>
             @endforeach
         </div>
     @endif

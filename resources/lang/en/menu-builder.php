@@ -13,6 +13,7 @@ return [
         'empty' => 'No menu placements are registered yet. Register one with Menu::registerPlacement() or in config/menu-builder.php.',
         'items' => '{0} No items|{1} 1 item|[2,*] :count items',
         'manage' => 'Manage',
+        'locked' => 'View only',
     ],
 
     'types' => [
