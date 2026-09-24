@@ -282,7 +282,7 @@ The package ships a small set of anonymous Blade components built on Filament's 
 | Prop | Default | |
 | --- | --- | --- |
 | `items` | `[]` | the collection returned by `Menu::build()` |
-| `variant` | `dropdown` | `dropdown`: horizontal; items with children open Filament dropdowns, nested at any depth<br>`tree`: vertical accordion (sidebar, mobile drawer); the active trail starts open<br>`columns`: root items as columns with their children listed below them (footer) |
+| `variant` | `dropdown` | `dropdown`: horizontal; items with children open Filament dropdowns, nested at any depth<br>`tree`: vertical accordion (sidebar, mobile drawer); the active trail starts open<br>`columns`: root items as columns with their children listed below them (footer)<br>`mega`: a scrollable row of categories whose groups open in wide panels on hover (see [Mega menu](#mega-menu)) |
 | `direction` | locale | `ltr` or `rtl`; defaults to Filament's direction for the current locale |
 | `item-component` | `menu-builder::item` | component that renders one item's element |
 | `heading-tag` | `span` | element used for headings |
@@ -291,6 +291,7 @@ The package ships a small set of anonymous Blade components built on Filament's 
 | `active-class` | – | classes added to the current item and its ancestors |
 | `dropdown-class` | – | classes added to the content of every dropdown panel |
 | `with-assets` | config | print the layout CSS and accordion script (once per page) |
+| `panel-class`, `open-delay`, `close-delay`, `panel-breakpoint` | – / config | `mega` variant only, see [Mega menu](#mega-menu) |
 
 Thin wrappers exist for common placements. Each one is `menu` with a variant and a class, and accepts the same props:
 
@@ -298,6 +299,7 @@ Thin wrappers exist for common placements. Each one is `menu` with a variant and
 <x-menu-builder::header :items="Menu::build('header')" />   {{-- dropdown --}}
 <x-menu-builder::sidebar :items="Menu::build('sidebar')" /> {{-- tree --}}
 <x-menu-builder::footer :items="Menu::build('footer')" />   {{-- columns --}}
+<x-menu-builder::mega :items="Menu::build('categories')" /> {{-- mega --}}
 ```
 
 ### Which Filament component renders what
@@ -350,6 +352,136 @@ An item with children is automatically a dropdown, and a child with children is 
 - For mobile navigation use the `tree` variant (or `<x-menu-builder::sidebar>`), an accordion toggled with icon buttons.
 
 The package's own assets are tiny: layout CSS and a script for the accordion toggles, printed once per page. Set `menu-builder.frontend.assets` to `false` (or pass `:with-assets="false"`) to ship your own. The inline tags use Laravel's Vite CSP nonce when one is set.
+
+### Mega menu
+
+The `mega` variant renders a marketplace-style category bar: a horizontal row of categories that scrolls when it is wider than the page, and a wide panel per category that opens on hover with the category's groups laid out in columns.
+
+```text
+Design   Programming   Marketing   Video   Writing   …   ›
+┌──────────────────────────────────────────────────────────┐
+│ Logo & Brand          Web Design          Print          │
+│ Logo Design           Landing Pages       Flyers         │
+│ Brand Style Guides    Website Redesign    Posters        │
+└──────────────────────────────────────────────────────────┘
+```
+
+#### Registering the placement
+
+The variant needs a three-level tree: categories, groups and links. `MegaMenu::register()` adds a placement with exactly these rules, plus the **Mega menu category** item type. Call it from a service provider:
+
+```php
+use Syriable\Filament\Plugins\MenuBuilder\MegaMenu;
+
+public function boot(): void
+{
+    MegaMenu::register(); // placement "categories"
+}
+```
+
+| Level | Item types | |
+| --- | --- | --- |
+| 1 | `mega-category` | a link (URL or named route) with a **Panel columns** setting |
+| 2 | `heading` or `link` | a group title; a `link` makes the title clickable |
+| 3 | `link` | the links of a group |
+
+The tree guard enforces these rules in the editor, for drag & drop, in `Menu::sync()` and in the actions. Nothing is registered until you call `register()`, so the item type never shows up in your other placements.
+
+Pass another key to register more placements, and a closure to adjust the preset:
+
+```php
+MegaMenu::register('services', fn (MenuPlacement $placement) => $placement
+    ->label('Service categories')
+    ->childItemTypes('heading', ['link', 'category']));   // also allow a model-backed type in groups
+```
+
+`MegaMenu::placement()` returns the preset without registering it, and `MegaMenu::itemType()` the item type.
+
+#### Columns
+
+Each category chooses **1 to 4** panel columns in its form. Left on **Automatic**, the panel gets one column per group, up to four. Groups never break across columns. The value is stored as `data.columns`:
+
+```php
+Menu::sync('categories', [
+    ['type' => 'mega-category', 'label' => 'Design', 'data' => [
+        'link_type' => 'url', 'url' => '/design', 'columns' => 3,
+    ], 'children' => [
+        ['type' => 'heading', 'label' => 'Logo & Brand', 'children' => [
+            ['type' => 'link', 'label' => 'Logo Design', 'badge' => 'New', 'data' => ['link_type' => 'url', 'url' => '/design/logo']],
+        ]],
+        ['type' => 'link', 'label' => 'Web Design', 'data' => ['link_type' => 'url', 'url' => '/design/web'], 'children' => [
+            ['type' => 'link', 'label' => 'Landing Pages', 'data' => ['link_type' => 'url', 'url' => '/design/web/landing']],
+        ]],
+    ]],
+]);
+```
+
+Badges, icons, colors, text options and HTML attributes work on every level as usual. A link with a color and an icon makes a highlighted "spotlight" entry.
+
+#### Rendering
+
+```blade
+<x-menu-builder::mega :items="Menu::build('categories')" label="Categories" />
+```
+
+It accepts the props of `menu`, plus:
+
+| Prop | Default | |
+| --- | --- | --- |
+| `panel-class` | – | classes added to every panel |
+| `open-delay` | `menu-builder.mega.open_delay` (100) | milliseconds before a panel opens on hover |
+| `close-delay` | `menu-builder.mega.close_delay` (150) | milliseconds before a panel closes after the pointer leaves |
+| `panel-breakpoint` | `menu-builder.mega.breakpoint` (1160) | minimum viewport width in pixels for panels |
+
+The script is an Alpine component that Filament loads on demand with `x-load`, so the page needs `@filamentScripts` (see [Filament on your frontend](#filament-on-your-frontend)) and the published Filament assets (`php artisan filament:assets`).
+
+#### Behavior
+
+- **Scrolling.** When the categories do not fit, an arrow appears on each side that has more of them. A click scrolls by most of the visible width, and touch and trackpad scrolling work too. Categories that are cut off ignore the pointer, so a panel never opens from under an arrow. Keyboard focus scrolls a category into view.
+- **Panels.** A panel is aligned with the start of its category and moved back when it would leave the menu, so a panel near the end lines up with the menu's end edge. Scrolling the row closes the open panel.
+- **Screen sizes.** Below `panel-breakpoint` the row still scrolls, and a category is a plain link. For phones, render the same placement with `<x-menu-builder::sidebar>` (the `tree` variant).
+- **Touch.** On a touch screen above the breakpoint, the first tap opens the panel and the second tap follows the link. The panel then starts with an "All of …" link to the category page.
+- **Keyboard.** `Tab` moves through the categories, `ArrowDown` opens the panel of the focused category and focuses its first link, `Escape` closes it and returns focus, and tabbing out of a panel closes it. Categories get `aria-expanded` and `aria-controls`.
+- **Direction.** Everything is mirrored in RTL: arrows, alignment and scrolling. The `<nav>` gets a `dir` attribute from the `direction` prop.
+- **`wire:navigate`.** When the menu is kept across pages with `@persist`, the current page and active trail are updated from the new URL. Classes from `active-class` are rendered on the server only.
+
+#### Events
+
+The `<nav>` dispatches `mb-mega-open` and `mb-mega-close`, with the category's menu item id in `detail.id`:
+
+```blade
+<div x-on:mb-mega-open="analytics.track('category_menu_open', { id: $event.detail.id })">
+    <x-menu-builder::mega :items="Menu::build('categories')" />
+</div>
+```
+
+#### Styling
+
+The panel width follows from its columns, so it is known before the panel opens. Adjust it and the rest of the look with custom properties on the menu or any ancestor:
+
+| Property | Default | |
+| --- | --- | --- |
+| `--mb-mega-column-width` | `15.5rem` | width of one panel column |
+| `--mb-mega-column-gap` | `4.5rem` | space between panel columns |
+| `--mb-mega-panel-padding-block`, `--mb-mega-panel-padding-inline` | `1.25rem`, `2rem` | panel padding |
+| `--mb-mega-panel-background`, `--mb-mega-panel-border-color`, `--mb-mega-panel-border-width` | white / gray-900 in dark mode | panel surface |
+| `--mb-mega-panel-shadow`, `--mb-mega-panel-z-index` | subtle, `40` | panel elevation |
+| `--mb-mega-item-gap` | `1.25rem` | minimum space between categories |
+| `--mb-mega-strip-padding-block` | `0.625rem` | height of the category row |
+| `--mb-mega-indicator-color`, `--mb-mega-indicator-size` | primary, `3px` | line under the hovered, open or active category |
+| `--mb-mega-arrow-size` | `2.25rem` | width of the scroll arrows |
+| `--mb-mega-fade-color` | white / gray-900 in dark mode | background the arrows fade from; set it to your header's background |
+
+```css
+.site-header .mb-menu--mega {
+    --mb-mega-fade-color: var(--color-gray-50);
+    --mb-mega-indicator-color: var(--color-emerald-500);
+}
+```
+
+Panel entries use the dropdown colors (`--mb-dropdown-color` and friends), not the menu's `--mb-color`, so a white category row in a dark header still gets readable panels.
+
+The `<nav>` is the containing block of the panels. Don't give the scrolling row (`.mb-mega-strip`), its list or its entries a `position`, or the panels will be clipped.
 
 ### Filament on your frontend
 
@@ -745,6 +877,7 @@ It has an index on `(placement, parent_id, sort_order)`.
 composer test      # Pest
 composer analyse   # PHPStan level 8 (Larastan)
 composer format    # Pint
+node --test 'tests/js/*.test.mjs'   # frontend script (no dependencies)
 ```
 
 ## Changelog
