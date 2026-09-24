@@ -67,6 +67,7 @@ class MenuBuilderServiceProvider extends PackageServiceProvider
         FilamentAsset::register([
             Css::make('menu-builder', __DIR__.'/../resources/dist/menu-builder.css'),
             AlpineComponent::make('menu-builder-tree', __DIR__.'/../resources/dist/menu-builder-tree.js'),
+            AlpineComponent::make('menu-builder-mega', __DIR__.'/../resources/dist/menu-builder-mega.js'),
         ], package: 'syriable/filament-menu-builder');
     }
 }
