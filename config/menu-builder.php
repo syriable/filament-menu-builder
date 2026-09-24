@@ -133,6 +133,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mega menu
+    |--------------------------------------------------------------------------
+    |
+    | Defaults for <x-menu-builder::menu variant="mega">. Panels open on hover
+    | from `breakpoint` pixels up; narrower screens only show the scrollable
+    | row of categories. The delays (milliseconds) keep panels from opening
+    | while the pointer passes by and from closing on the way into a panel.
+    | The component props of the same names override these values.
+    |
+    */
+
+    'mega' => [
+        'breakpoint' => 1160,
+        'open_delay' => 100,
+        'close_delay' => 150,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Route picker
     |--------------------------------------------------------------------------
     |
