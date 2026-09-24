@@ -703,6 +703,35 @@ describe('item form', function (): void {
             ->assertHasActionErrors(['icon']);
     });
 
+    it('creates route links with dynamic parameters', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'My profile',
+                'data' => ['link_type' => 'route', 'route' => 'users.show', 'route_parameters' => ['user' => '{user}']],
+            ])
+            ->assertHasNoActionErrors()
+            ->callAction('save');
+
+        $user = admin();
+
+        expect(Menu::build('header', $user)->last()->url)->toBe(url('/users/'.$user->getKey()));
+
+        auth()->logout();
+
+        expect(Menu::build('header')->pluck('label')->all())->not->toContain('My profile');
+    });
+
+    it('rejects unknown placeholders in route parameters', function (): void {
+        livewire(ManageMenu::class, ['placement' => 'header'])
+            ->callAction('createItem', data: [
+                'type' => 'link',
+                'label' => 'My profile',
+                'data' => ['link_type' => 'route', 'route' => 'users.show', 'route_parameters' => ['user' => '{member}']],
+            ])
+            ->assertHasActionErrors(['data.route']);
+    });
+
     it('rejects invalid hover colors', function (): void {
         livewire(ManageMenu::class, ['placement' => 'header'])
             ->callAction('createItem', data: [

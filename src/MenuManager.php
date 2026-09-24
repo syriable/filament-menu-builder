@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Syriable\Filament\Plugins\MenuBuilder;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Collection;
 use Syriable\Filament\Plugins\MenuBuilder\Actions\PublishMenuTree;
 use Syriable\Filament\Plugins\MenuBuilder\Actions\PublishResult;
 use Syriable\Filament\Plugins\MenuBuilder\Data\ResolvedMenuItem;
 use Syriable\Filament\Plugins\MenuBuilder\Support\MenuRepository;
+use Syriable\Filament\Plugins\MenuBuilder\Support\UrlParameters;
 use Syriable\Filament\Plugins\MenuBuilder\Tree\MenuTree;
 
 /**
@@ -39,6 +41,18 @@ final readonly class MenuManager
     public function registerVisibility(MenuVisibility ...$visibilities): self
     {
         $this->registry->registerVisibility(...$visibilities);
+
+        return $this;
+    }
+
+    /**
+     * Registers a `{name}` placeholder for link URLs and route parameters.
+     * The resolver may inject `$user`, `$request` and `$path` and returns
+     * the value, or null to hide links that use it.
+     */
+    public function registerUrlParameter(string $name, Closure $resolver): self
+    {
+        app(UrlParameters::class)->register($name, $resolver);
 
         return $this;
     }

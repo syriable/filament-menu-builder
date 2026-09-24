@@ -15,6 +15,7 @@ use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Syriable\Filament\Plugins\MenuBuilder\Contracts\DraftStore;
 use Syriable\Filament\Plugins\MenuBuilder\Drafts\CacheDraftStore;
+use Syriable\Filament\Plugins\MenuBuilder\Support\UrlParameters;
 
 class MenuBuilderServiceProvider extends PackageServiceProvider
 {
@@ -49,6 +50,7 @@ class MenuBuilderServiceProvider extends PackageServiceProvider
         });
 
         $this->app->singleton(MenuManager::class);
+        $this->app->singleton(UrlParameters::class);
 
         $this->app->singleton(DraftStore::class, static function (Application $app): DraftStore {
             $config = $app->make('config');

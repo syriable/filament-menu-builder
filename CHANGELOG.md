@@ -4,6 +4,8 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- Dynamic URLs: link URLs and route parameters accept placeholders resolved per visitor: `{user}`, `{user.attribute}`, `{route.parameter}` and `{query.key}`. Custom placeholders can be added with `Menu::registerUrlParameter()`. Links whose placeholders have no value (e.g. `{user}` for guests) are left out. Unknown placeholders in route parameters are rejected on save.
+
 - The item form picks icons with Filament Icon Hub's `IconSelect` (new dependency `syriable/filament-icon-hub`). It offers a searchable icon grid over every Blade Icons set and custom provider. Items store Icon Hub identifiers (`heroicons:o-home`). Blade Icons names (`heroicon-o-home`) still render everywhere and are shown as the matching icon in the form.
 - Requires `filament/filament` 5.8.4 or later, as Icon Hub does.
 

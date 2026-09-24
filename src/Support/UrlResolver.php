@@ -15,6 +15,10 @@ use Illuminate\Support\Str;
  *
  * Link data is either `['link_type' => 'url', 'url' => '...']` or
  * `['link_type' => 'route', 'route' => 'name', 'route_parameters' => [...]]`.
+ *
+ * URLs and route parameter values may contain placeholders such as
+ * `{user}` or `{route.user}` (see UrlParameters), resolved for the current
+ * visitor. A placeholder without a value resolves the whole link to null.
  */
 class UrlResolver
 {
@@ -25,6 +29,7 @@ class UrlResolver
     public function __construct(
         protected readonly Router $router,
         protected readonly UrlGenerator $url,
+        protected readonly UrlParameters $parameters,
     ) {}
 
     /**
@@ -49,6 +54,10 @@ class UrlResolver
     {
         $url = trim((string) $url);
 
+        if ($url !== '' && $this->parameters->containsPlaceholders($url)) {
+            $url = (string) $this->parameters->replace($url, encode: true);
+        }
+
         return $url === '' ? null : $url;
     }
 
@@ -69,6 +78,20 @@ class UrlResolver
             $parameters,
             static fn (mixed $value): bool => is_scalar($value) && (string) $value !== '',
         );
+
+        foreach ($parameters as $key => $value) {
+            if (! is_string($value) || ! $this->parameters->containsPlaceholders($value)) {
+                continue;
+            }
+
+            $resolved = $this->parameters->replace($value);
+
+            if ($resolved === null) {
+                return null;
+            }
+
+            $parameters[$key] = $resolved;
+        }
 
         try {
             return $this->url->route($name, $parameters);
