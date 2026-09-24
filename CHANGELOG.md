@@ -4,6 +4,9 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- The item form picks icons with Filament Icon Hub's `IconSelect` (new dependency `syriable/filament-icon-hub`). It offers a searchable icon grid over every Blade Icons set and custom provider. Items store Icon Hub identifiers (`heroicons:o-home`). Blade Icons names (`heroicon-o-home`) still render everywhere and are shown as the matching icon in the form.
+- Requires `filament/filament` 5.8.4 or later, as Icon Hub does.
+
 - Screen visibility per item (`data.screens`): show from a breakpoint and/or hide from a breakpoint (Tailwind's `sm` to `2xl`), e.g. phones only, tablets and larger, or tablets only. Available in the item form, validated on save, shown as a badge in the tree, and rendered as `mb-show-from-*` / `mb-hide-from-*` classes on the item's wrapper in every variant.
 - Dropdown panel entries now receive wrapper attributes (HTML attributes that target the wrapper, and the screen classes) on a wrapping `<div class="mb-panel-entry">`. Before, wrapper attributes of panel entries were dropped.
 - Items no longer print an empty `style` attribute.

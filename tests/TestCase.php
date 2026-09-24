@@ -23,6 +23,7 @@ use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Override;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
+use Syriable\Filament\Plugins\IconHub\IconHubServiceProvider;
 use Syriable\Filament\Plugins\MenuBuilder\MenuBuilderServiceProvider;
 use Syriable\Filament\Plugins\MenuBuilder\Tests\Fixtures\TestPanelProvider;
 
@@ -50,6 +51,7 @@ abstract class TestCase extends Orchestra
             SupportServiceProvider::class,
             TablesServiceProvider::class,
             WidgetsServiceProvider::class,
+            IconHubServiceProvider::class,
             MenuBuilderServiceProvider::class,
             TestPanelProvider::class,
         ];
