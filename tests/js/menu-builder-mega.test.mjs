@@ -36,6 +36,50 @@ describe('panelInsetStart', () => {
     })
 })
 
+describe('panelInsetStart with viewport bounds', () => {
+    // A 2000px viewport with a 16px gap on each side.
+    const bounds = { left: 16, right: 1984 }
+
+    it('lets a panel extend past the container end edge', () => {
+        const start = panelInsetStart({ container, bounds, trigger: { left: 1300, right: 1400 }, panelWidth: 634, rtl: false })
+
+        assert.equal(start, 1200)
+        assert.equal(container.left + start + 634, 1934)
+    })
+
+    it('clamps a panel to the viewport end edge', () => {
+        const start = panelInsetStart({ container, bounds, trigger: { left: 1300, right: 1400 }, panelWidth: 1274, rtl: false })
+
+        assert.equal(container.left + start + 1274, 1984)
+    })
+
+    it('moves a panel before the container start edge when needed', () => {
+        const start = panelInsetStart({ container, bounds, trigger: { left: 1300, right: 1400 }, panelWidth: 1900, rtl: false })
+
+        assert.equal(start, -16)
+        assert.equal(container.left + start + 1900, 1984)
+    })
+
+    it('starts at the viewport start edge when the panel is wider than the viewport', () => {
+        const start = panelInsetStart({ container, bounds, trigger: { left: 900, right: 1000 }, panelWidth: 2500, rtl: false })
+
+        assert.equal(container.left + start, 16)
+    })
+
+    it('mirrors the bounds in right-to-left menus', () => {
+        // Aligned with the trigger's right edge, extending past the container's left edge.
+        const start = panelInsetStart({ container, bounds, trigger: { left: 120, right: 200 }, panelWidth: 150, rtl: true })
+
+        assert.equal(start, 1300)
+        assert.equal(container.right - start - 150, 50)
+
+        // Clamped to the viewport's left edge.
+        const clamped = panelInsetStart({ container, bounds, trigger: { left: 120, right: 200 }, panelWidth: 1274, rtl: true })
+
+        assert.equal(container.right - clamped - 1274, 16)
+    })
+})
+
 describe('scrollState', () => {
     it('reports nothing to scroll when everything fits', () => {
         assert.deepEqual(scrollState({ scrollLeft: 0, scrollWidth: 1000, clientWidth: 1000 }), { canScrollStart: false, canScrollEnd: false })

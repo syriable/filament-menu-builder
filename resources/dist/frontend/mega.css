@@ -10,7 +10,8 @@
  * block of every panel. The strip scrolls (overflow-x: auto) but is NOT
  * positioned, so a panel is neither clipped nor scrolled by it. Adding a
  * position to .mb-mega-strip, .mb-mega-list or .mb-mega-entry would clip
- * every panel.
+ * every panel. Panels may extend past the <nav> up to the viewport, so an
+ * ancestor of the <nav> with overflow: hidden clips them too.
  *
  * Custom properties, set on the menu or any ancestor:
  *   --mb-mega-column-width        width of one panel column (15.5rem)
@@ -19,12 +20,20 @@
  *   --mb-mega-panel-border-width  (1px)
  *   --mb-mega-panel-background, --mb-mega-panel-border-color
  *   --mb-mega-panel-shadow, --mb-mega-panel-z-index
+ *   --mb-mega-panel-viewport-gap  minimum space between a panel and the viewport edges (16px)
  *   --mb-mega-item-gap            minimum space between categories (1.25rem)
  *   --mb-mega-strip-padding-block height of the category row
  *   --mb-mega-indicator-color, --mb-mega-indicator-size
  *   --mb-mega-arrow-size          width of the scroll arrows (2.25rem)
  *   --mb-mega-fade-color          background the arrows fade from; match your header
  */
+
+/* Registered so the script reads the gap in pixels whatever unit is used. */
+@property --mb-mega-panel-viewport-gap {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 16px;
+}
 
 @layer base {
     :where(.mb-menu--mega) {
@@ -37,6 +46,7 @@
         --mb-mega-panel-border-color: var(--gray-200, rgb(128 128 128 / 0.2));
         --mb-mega-panel-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
         --mb-mega-panel-z-index: 40;
+        --mb-mega-panel-viewport-gap: 16px;
         --mb-mega-item-gap: 1.25rem;
         --mb-mega-strip-padding-block: 0.625rem;
         --mb-mega-indicator-color: var(--primary-500, currentColor);
@@ -52,7 +62,7 @@
     :where(.dark .mb-menu--mega) {
         --mb-mega-panel-background: var(--gray-900, #111);
         --mb-mega-panel-border-color: rgb(255 255 255 / 0.1);
-        --mb-mega-fade-color: var(--gray-900, #111);
+        --mb-mega-fade-color: var(--gray-800, #27272a);
     }
 
     /* The strip: scrolls horizontally, never positioned (see above). */
@@ -157,7 +167,7 @@
     /*
      * Panels. The width follows from the column count alone, so the script
      * can place a panel in the same frame it opens it. The inline start is
-     * set by the script: aligned with the category, kept inside the <nav>.
+     * set by the script: aligned with the category, kept inside the viewport.
      */
 
     :where(.mb-menu--mega .mb-mega-panel) {
@@ -169,7 +179,7 @@
         display: none;
         box-sizing: border-box;
         inline-size: min(
-            100%,
+            100vw - 2 * var(--mb-mega-panel-viewport-gap),
             calc(
                 var(--mb-mega-cols) * var(--mb-mega-column-width)
                 + (var(--mb-mega-cols) - 1) * var(--mb-mega-column-gap)
