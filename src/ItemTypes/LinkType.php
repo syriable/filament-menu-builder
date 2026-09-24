@@ -87,7 +87,8 @@ class LinkType extends MenuItemType
                 ->columnSpanFull(),
             TextInput::make('url')
                 ->label(__('menu-builder::menu-builder.fields.url'))
-                ->placeholder('/about, https://example.com, #pricing, mailto:…')
+                ->placeholder('/about, https://example.com, #pricing, /users/{user}')
+                ->helperText(__('menu-builder::menu-builder.fields.placeholders_help'))
                 ->required()
                 ->maxLength(2048)
                 ->visible($isUrl)
@@ -111,6 +112,8 @@ class LinkType extends MenuItemType
                 ->label(__('menu-builder::menu-builder.fields.route_parameters'))
                 ->keyLabel(__('menu-builder::menu-builder.fields.parameter'))
                 ->valueLabel(__('menu-builder::menu-builder.fields.value'))
+                ->valuePlaceholder('{user}')
+                ->helperText(__('menu-builder::menu-builder.fields.placeholders_help'))
                 ->visible($isRoute)
                 ->columnSpanFull(),
             Toggle::make('new_tab')

@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
 use Syriable\Filament\Plugins\MenuBuilder\Data\ResolvedMenuItem;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Support\MenuRepository;
+use Syriable\Filament\Plugins\MenuBuilder\Support\UrlParameters;
 use Syriable\Filament\Plugins\MenuBuilder\Support\VisibilityResolver;
 use Syriable\Filament\Plugins\MenuBuilder\Tree\MenuTree;
 
@@ -32,6 +33,7 @@ final readonly class MenuBuilder
         private AuthFactory $auth,
         private UrlGenerator $url,
         private Translator $translator,
+        private UrlParameters $parameters,
     ) {}
 
     /**
@@ -52,7 +54,11 @@ final readonly class MenuBuilder
         $records = $this->loadRecords($tree, $keys);
         $locale ??= $this->translator->getLocale();
 
-        return collect($this->resolveChildren($tree, null, $keys, $records, $current, $locale, 1));
+        // URL placeholders such as {user} resolve for the user the menu is built for.
+        return collect($this->parameters->forUser(
+            $user,
+            fn (): array => $this->resolveChildren($tree, null, $keys, $records, $current, $locale, 1),
+        ));
     }
 
     /**

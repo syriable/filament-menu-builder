@@ -168,6 +168,55 @@ Link data is stored in the item's `data` column:
 
 Saving fails when a route does not exist or cannot be generated with the given parameters. If a route is removed from the application later, the item is left out of the built menu instead of breaking the page. Routes that match the patterns in `menu-builder.routes.exclude` (for example `filament.*` or `livewire.*`) are not offered in the route picker.
 
+### Dynamic URLs and route parameters
+
+URLs and route parameter values can contain placeholders. They are resolved for each visitor every time the menu is built:
+
+| Placeholder | Value |
+| --- | --- |
+| `{user}` | the signed-in user's route key (usually the ID) |
+| `{user.username}` | an attribute of the signed-in user (hidden attributes such as `password` are never used) |
+| `{route.user}` | a parameter of the current page's route; bound models give their route key |
+| `{query.ref}` | a value from the current query string |
+
+For example, a "My profile" item that opens `route('users.show', $user)` for whoever is signed in:
+
+```text
+Link to:          Route
+Route:            users.show
+Route parameters: user = {user}
+```
+
+On `/users/42`, a "Follow" item with `user = {route.user}` links to the profile being viewed. Placeholders also work in URLs (`/users/{user}/settings`) and inside longer values (`team-{user.team_id}`). In URLs the values are URL-encoded.
+
+**When a placeholder has no value** (a guest has no `{user}`, the page has no `{route.user}` parameter), the item is left out of the menu. A "My profile" link therefore disappears for guests without any visibility rule. Saving checks that every placeholder in route parameters is known. Unknown placeholders in URLs stay as they are.
+
+Register your own placeholders, for example in `AppServiceProvider::boot()`:
+
+```php
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Http\Request;
+
+Menu::registerUrlParameter('team', fn (?Authenticatable $user, ?string $path): ?string => match ($path) {
+    'slug' => $user?->currentTeam?->slug,  // {team.slug}
+    default => $user?->currentTeam?->id,   // {team}
+});
+
+Menu::registerUrlParameter('locale', fn (Request $request): string => app()->getLocale()); // {locale}
+```
+
+The resolver may inject `$user`, `$request` and `$path` (the part after the dot) and returns a string, number, enum, routable model, or `null` to hide the link.
+
+In a seeder:
+
+```php
+['type' => 'link', 'label' => 'My profile', 'visibility' => 'authenticated', 'data' => [
+    'link_type' => 'route',
+    'route' => 'users.show',
+    'route_parameters' => ['user' => '{user}'],
+]],
+```
+
 ## Custom item types
 
 An item type defines its form fields, its validation rules and how its label and URL are resolved. Type-specific values are stored in the item's `data` JSON column, so custom types do not need migrations.

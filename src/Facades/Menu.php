@@ -12,6 +12,7 @@ use Syriable\Filament\Plugins\MenuBuilder\MenuManager;
  * @method static MenuManager registerPlacement(\Syriable\Filament\Plugins\MenuBuilder\MenuPlacement ...$placements)
  * @method static MenuManager registerItemType(\Syriable\Filament\Plugins\MenuBuilder\MenuItemType ...$types)
  * @method static MenuManager registerVisibility(\Syriable\Filament\Plugins\MenuBuilder\MenuVisibility ...$visibilities)
+ * @method static MenuManager registerUrlParameter(string $name, \Closure $resolver)
  * @method static array<string, \Syriable\Filament\Plugins\MenuBuilder\MenuPlacement> placements()
  * @method static \Syriable\Filament\Plugins\MenuBuilder\MenuPlacement placement(string $key)
  * @method static array<string, \Syriable\Filament\Plugins\MenuBuilder\MenuItemType> itemTypes()

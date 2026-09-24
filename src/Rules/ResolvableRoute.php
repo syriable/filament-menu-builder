@@ -7,11 +7,15 @@ namespace Syriable\Filament\Plugins\MenuBuilder\Rules;
 use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Syriable\Filament\Plugins\MenuBuilder\Support\UrlParameters;
 use Syriable\Filament\Plugins\MenuBuilder\Support\UrlResolver;
 
 /**
  * The route must exist and a URL must be generated from it with the route
  * parameters of the same item, so required parameters cannot be missing.
+ * Placeholders ({user}, {route.user}, ...) must be known; they are replaced
+ * with a sample value for the check, since their real value depends on the
+ * visitor.
  */
 final class ResolvableRoute implements DataAwareRule, ValidationRule
 {
@@ -39,7 +43,22 @@ final class ResolvableRoute implements DataAwareRule, ValidationRule
             return;
         }
 
+        $placeholders = app(UrlParameters::class);
         $parameters = is_array($this->data['route_parameters'] ?? null) ? $this->data['route_parameters'] : [];
+
+        foreach ($parameters as $key => $parameter) {
+            if (! is_string($parameter)) {
+                continue;
+            }
+
+            foreach ($placeholders->unknown($parameter) as $unknown) {
+                $fail(__('menu-builder::menu-builder.validation.unknown_placeholder', ['placeholder' => '{'.$unknown.'}']));
+
+                return;
+            }
+
+            $parameters[$key] = $placeholders->sample($parameter);
+        }
 
         if ($resolver->route($route, $parameters) === null) {
             $fail(__('menu-builder::menu-builder.validation.route_parameters', ['route' => $route]));
