@@ -4,6 +4,10 @@ All notable changes to `filament-menu-builder` will be documented in this file.
 
 ## Unreleased
 
+- Screen visibility per item (`data.screens`): show from a breakpoint and/or hide from a breakpoint (Tailwind's `sm` to `2xl`), e.g. phones only, tablets and larger, or tablets only. Available in the item form, validated on save, shown as a badge in the tree, and rendered as `mb-show-from-*` / `mb-hide-from-*` classes on the item's wrapper in every variant.
+- Dropdown panel entries now receive wrapper attributes (HTML attributes that target the wrapper, and the screen classes) on a wrapping `<div class="mb-panel-entry">`. Before, wrapper attributes of panel entries were dropped.
+- Items no longer print an empty `style` attribute.
+
 - Added: `mega` frontend variant with `MegaMenu::register()`, the `mega-category` item type and `menu-builder.mega` config.
 - Mega panels may extend past the menu and are kept inside the viewport instead, with a `--mb-mega-panel-viewport-gap` (16px) from its edges.
 - The mega scroll arrows fade from gray-800 in dark mode, to match a gray-800 header.

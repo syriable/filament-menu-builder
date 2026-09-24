@@ -12,6 +12,7 @@ use Syriable\Filament\Plugins\MenuBuilder\Enums\BadgePosition;
 use Syriable\Filament\Plugins\MenuBuilder\Enums\RenderAs;
 use Syriable\Filament\Plugins\MenuBuilder\Models\MenuItem;
 use Syriable\Filament\Plugins\MenuBuilder\Support\HtmlAttributes;
+use Syriable\Filament\Plugins\MenuBuilder\Support\ScreenVisibility;
 use Syriable\Filament\Plugins\MenuBuilder\Support\TextStyle;
 
 /**
@@ -46,6 +47,8 @@ final readonly class MenuNode implements Arrayable
     public const string DATA_LABEL_TRANSLATIONS = 'label_translations';
 
     public const string DATA_TEXT_STYLE = 'text_style';
+
+    public const string DATA_SCREENS = 'screens';
 
     /**
      * @param  array<string, mixed>  $data  Type specific data (url, route, record id, ...) and rendering options.
@@ -193,6 +196,11 @@ final readonly class MenuNode implements Arrayable
     public function textStyle(): TextStyle
     {
         return TextStyle::fromArray($this->data[self::DATA_TEXT_STYLE] ?? null);
+    }
+
+    public function screens(): ScreenVisibility
+    {
+        return ScreenVisibility::fromArray($this->data[self::DATA_SCREENS] ?? null);
     }
 
     public function isNew(): bool

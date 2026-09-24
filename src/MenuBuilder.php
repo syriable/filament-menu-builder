@@ -165,6 +165,7 @@ final readonly class MenuBuilder
                 attributeTarget: $node->attributeTarget(),
                 badgePosition: $node->badgePosition(),
                 textStyle: $node->textStyle(),
+                screens: $node->screens(),
             );
         }
 

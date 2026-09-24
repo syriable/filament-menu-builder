@@ -195,6 +195,10 @@ The renderer is a thin layer of anonymous components over Filament's UI componen
 
 `Support\TextStyle` is a readonly value object over `data.text_style`. It validates in two places: `TextStyle::rules()` runs in `MenuTreeGuard` for every write path, and `TextStyle::fromArray()` drops unknown values on read. The hover color only accepts hex, `rgb()`, `hsl()` and `oklch()` notations, so it can't close the declaration it is written into. `ResolvedMenuItem::itemAttributes()` adds the resulting `mb-*` classes and the `--mb-item-hover-color` property, so every renderer (and custom item components) gets them for free, even when the HTML attributes target the wrapper. The matching rules live in the `components` layer of the frontend CSS and are more specific than both Filament's rules and the package defaults.
 
+## Screen visibility
+
+`Support\ScreenVisibility` is a readonly value object over `data.screens` (`from` and `until`, both `Enums\Breakpoint`). `ScreenVisibility::rules()` validates it in `MenuTreeGuard`, including rejecting ranges that never match, and `fromArray()` ignores unknown values when it reads. The classes go into `ResolvedMenuItem::wrapperAttributes()`, so every view that renders a wrapper (list, tree, columns and mega) applies them without its own code. Dropdown panel entries have no wrapper of their own, so `dropdown-item` wraps them in a `<div>` only when the wrapper has attributes. The media queries live in the `components` layer of `menu.css`, with doubled classes so they beat Filament's own `display` rules.
+
 ## Item form settings
 
 `menu-builder.locales` and `menu-builder.item_form` (`slide_over`, `width`) configure the editor. The plugin methods of the same purpose override them, and the page reads them through `InteractsWithMenuPlugin::settings()`, which falls back to a plugin built from the config when the page runs outside a panel that registered the plugin.

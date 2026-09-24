@@ -241,6 +241,36 @@ Menu::registerVisibility(
 
 When an item is invisible or inactive, its whole subtree is hidden. Items with an unknown visibility rule are hidden too, so a missing rule fails closed.
 
+
+### Screen sizes
+
+The **Screen sizes** section of the item form shows an item only on some screens:
+
+| Goal | Show from | Hide from |
+| --- | --- | --- |
+| Phones only | – | `md` |
+| Tablets and larger | `md` | – |
+| Tablets only | `md` | `lg` |
+| Desktops only | `xl` | – |
+
+The breakpoints are Tailwind's defaults: `sm` 640px, `md` 768px, `lg` 1024px, `xl` 1280px and `2xl` 1536px. The rule applies to the whole entry: an item with children disappears together with its dropdown, accordion or column. It works in every variant, including dropdown panels.
+
+The setting is stored in `data.screens`:
+
+```php
+['type' => 'link', 'label' => 'Download the app', 'data' => [
+    'link_type' => 'url',
+    'url' => '/app',
+    'screens' => ['until' => 'md'],              // phones only
+]],
+['type' => 'button', 'label' => 'Sign up', 'data' => [
+    'url' => '/register',
+    'screens' => ['from' => 'md'],               // tablets and larger
+]],
+```
+
+It renders as `mb-show-from-{breakpoint}` and `mb-hide-from-{breakpoint}` classes on the item's wrapper, backed by media queries in the package CSS. Hidden entries stay in the HTML, so crawlers and screen readers on other sizes are not affected. A range that can never match (e.g. show from `lg`, hide from `md`) is rejected on save. `ResolvedMenuItem::$screens` exposes the setting (`from`, `until`, `showsAt($width)`) to custom renderers and JavaScript frontends.
+
 ## Building menus on the frontend
 
 ```php

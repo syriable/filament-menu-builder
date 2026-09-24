@@ -290,3 +290,16 @@ it('resolves the text style of items', function (): void {
         ->and($pricing->toArray()['text_style'])->toBe(['weight' => 'bold', 'hover_color' => '#f59e0b'])
         ->and($about->textStyle->isEmpty())->toBeTrue();
 });
+
+it('resolves the screen visibility of items', function (): void {
+    Menu::sync('header', [
+        linkItem('Apps', '/apps', ['data' => ['link_type' => 'url', 'url' => '/apps', 'screens' => ['until' => 'md']]]),
+        linkItem('About', '/about'),
+    ]);
+
+    [$apps, $about] = Menu::build('header')->all();
+
+    expect($apps->screens->toArray())->toBe(['until' => 'md'])
+        ->and($apps->toArray()['screens'])->toBe(['until' => 'md'])
+        ->and($about->screens->isAlways())->toBeTrue();
+});

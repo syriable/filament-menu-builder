@@ -208,3 +208,15 @@ it('validates the text style', function (): void {
         'data.text_style.hover_color',
     ]);
 });
+
+it('validates the screen visibility', function (array $screens, array $fields): void {
+    $tree = MenuTree::fromNestedArray('header', [
+        linkItem('Item', '/', ['data' => ['link_type' => 'url', 'url' => '/', 'screens' => $screens]]),
+    ]);
+
+    expect(array_map(fn (TreeViolation $violation): string => $violation->field ?? '', $this->guard->validate($tree)))->toBe($fields);
+})->with([
+    'valid range' => [['from' => 'md', 'until' => 'xl'], []],
+    'unknown breakpoint' => [['from' => 'huge'], ['data.screens.from']],
+    'empty range' => [['from' => 'lg', 'until' => 'md'], ['data.screens']],
+]);
